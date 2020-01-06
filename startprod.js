@@ -10,7 +10,6 @@ const redisStorage = require('connect-redis')(session);
 const redis = require('redis');
 const http = require('http');
 const WebSocket = require('ws')
-
 function isStr(value) {
     return typeof value === "string"
 }
@@ -51,7 +50,6 @@ app.use("/restore", express.static(path.join(__dirname, 'restoreAccountPage')));
 // Становятся доступными все файлы в директории чата
 app.get("/", function (request, response) {
     // TODO: Сделать проверку есть ли пользователь (хранящийся в сессии) в базе (на случай если была авторизация на нескольких устройствах, а акк удалён из базы)
-    console.log('Cookie: ', request.cookies);
     if (request.session.authInfo) {
         response.redirect('/chat'); // на чат
     } else {
@@ -75,12 +73,18 @@ app.get("/deleteAccount", function(request, response) {
     });
     request.session.destroy((err) => {
         if (err) return console.log(err);
+        response.clearCookie("userName");
+        response.clearCookie("fullName");
+        response.clearCookie("statusText");
         response.redirect('/');
     });
 });
 app.get("/logout", function (request, response) {
     request.session.destroy((err) => {
         if (err) return console.log(err);
+        response.clearCookie("userName");
+        response.clearCookie("fullName");
+        response.clearCookie("statusText");
         response.redirect('/');
     });
 });
@@ -115,7 +119,6 @@ app.post("/canIlogin", function (request, response) {
             return "Неверный пароль";
         } else {
             rp.isError = false;
-            console.log(result)
             request.session.authInfo = responsedata.reply = result
             response.cookie('userName', result.userName);
             response.cookie('fullName', result.fullName);
@@ -192,7 +195,7 @@ app.post("/canIregister", function (request, response) {
                 email: d.email,
                 fullName: d.fullName,
                 regDate: new Date(Date.now()),
-                statusText: "Скоро здесь будет ваш статус"
+                statusText: "Тут был статус"
             };
             rp.isError = false;
             return users.insertOne(userProfile); // Возвращаем промис
@@ -206,10 +209,16 @@ app.post("/canIregister", function (request, response) {
         rp.isError = true;
         return err;
     }).then((result) => {
-        rp.info = rp.isError ? result : (request.session.authInfo = responsedata.reply = result.ops[0]) && "Регистрация успешна";
-        response.cookie('userName', rp.info.userName);
-        response.cookie('fullName', rp.info.fullName);
-        response.cookie('statusText', rp.info.statusText);
+        if (rp.isError) {
+            rp.info = result;
+        } else {
+            const data = result.ops[0];
+            request.session.authInfo = responsedata.reply = data;
+            response.cookie('userName', data.userName);
+            response.cookie('fullName', data.fullName);
+            response.cookie('statusText', data.statusText);
+            rp.info = "Регистрация успешна";
+        }
         response.json(responsedata);
     });
 });
@@ -239,9 +248,7 @@ wss.on('connection', (ws) => {
     });
     ws.on('message', (message) => {
         console.log('received: %s', message);
-
         const broadcastRegex = /^broadcast:/;
-
         if (broadcastRegex.test(message)) {
             message = message.replace(broadcastRegex, '');
             wss.clients
@@ -250,7 +257,6 @@ wss.on('connection', (ws) => {
                         client.send(`Hello, broadcast message -> ${message}`);
                     }
                 });
-
         } else {
             ws.send(`Hello, you sent -> ${message}`);
         }
@@ -271,12 +277,13 @@ mongoClient.connect(function (err, client) {
     if (err) return console.log(err);
     dbClient = client;
     app.locals.users = client.db().collection("users");
-    // app.locals.messages = client.db().collection("messages");
-    server.listen(port, () => {
-        console.log(`Server started on ${server.address()} :)`);
+    app.locals.messages = client.db().collection("messages");
+    server.listen(port, function(){
+        console.log("Сервер слушает")
     });
 });
 process.on("SIGINT", () => {
+    // TODO: добавить завершение WS сервера
     dbClient.close();
     process.exit();
 });
