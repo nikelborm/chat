@@ -1,15 +1,19 @@
 const express = require('express');
 const favicon = require('express-favicon');
-const MongoClient = require("mongodb").MongoClient;
+const mongodb = require("mongodb");
 const path = require('path');
 const session = require('express-session');
 const sha256 = require('sha256');
 const bodyParser = require('body-parser');
-// const cookieParser = require('cookie-parser');
+const cookieParser = require('cookie-parser');
 const redisStorage = require('connect-redis')(session);
 const redis = require('redis');
+const http = require('http');
+const WebSocket = require('ws')
 
-function isStr(value) { return typeof value === "string" }
+function isStr(value) {
+    return typeof value === "string"
+}
 
 // console.log(Object.getOwnPropertyNames(users.__proto__))
 const port = process.env.PORT || 3000;
@@ -23,20 +27,6 @@ const app = express();
 const storage = new redisStorage({
     client: redis.createClient(redisLink)
 });
-const mongoClient = new MongoClient(mongoLink, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-});
-let dbClient;
-mongoClient.connect(function(err, client){
-    if (err) return console.log(err);
-    dbClient = client;
-    app.locals.users = client.db().collection("users");
-    // app.locals.messages = client.db().collection("messages");
-    app.listen(port, function(){
-        console.log("Сервер ожидает подключения...");
-    });
-});
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(bodyParser.text());
@@ -48,6 +38,7 @@ app.use(session({
     unset: "destroy",
     saveUninitialized: false
 }));
+app.use(cookieParser(secretKey));
 app.use(favicon(__dirname + '/build/favicon.ico'));
 // the __dirname is the current directory from where the script is running
 // app.use(express.static(__dirname));
@@ -55,35 +46,42 @@ app.use(favicon(__dirname + '/build/favicon.ico'));
 app.use("/register", express.static(path.join(__dirname, 'registerPage')));
 app.use("/restore", express.static(path.join(__dirname, 'restoreAccountPage')));
 // Если человек сам зашёл на логин или его редиректнуло, идёт проверка авторизован ли он, если да то его редиректит на / то есть чат, если нет, то ему выкидывается страница логина
-app.get("/login", function (request, response) {
+// Вместе с страницей логина делаются доступными все файлы в нужной директории
+// Если человек сам зашёл на чат или его редиректнуло, так же идёт проверка авторизован ли он, если да то он остаётся тут, иначе его редиректит на логин
+// Становятся доступными все файлы в директории чата
+app.get("/", function (request, response) {
     // TODO: Сделать проверку есть ли пользователь (хранящийся в сессии) в базе (на случай если была авторизация на нескольких устройствах, а акк удалён из базы)
+    console.log('Cookie: ', request.cookies);
     if (request.session.authInfo) {
-        response.redirect('/'); // на чат
+        response.redirect('/chat'); // на чат
     } else {
         response.sendFile(path.join(__dirname, 'loginPage', 'index.html'));
     }
 });
-// Вместе с страницей логина делает доступными все файлы в нужной директории
-app.use("/login", express.static(path.join(__dirname, 'loginPage')));
-// Если человек сам зашёл на чат или его редиректнуло, так же идёт проверка авторизован ли он, если да то он остаётся тут, иначе его редиректит на логин
-app.get("/", function (request, response) {
+app.use("/", express.static(path.join(__dirname, 'loginPage')));
+app.get("/chat", function (request, response) {
     // TODO: Сделать проверку есть ли пользователь (хранящийся в сессии) в базе (на случай если была авторизация на нескольких устройствах, а акк удалён из базы)
     if (request.session.authInfo) {
         response.sendFile(path.join(__dirname, 'build', 'index.html'));
     } else {
-        response.redirect('/login');
+        response.redirect('/');
     }
 });
-// Становятся доступными все файлы в директории чата
-app.use("/", express.static(path.join(__dirname, 'build')));
-
+app.use("/chat", express.static(path.join(__dirname, 'build')));
 app.get("/deleteAccount", function(request, response) {
-    // TODO: Удаление аккаунта, затем удаление сессии, затем редирект на страницу входа
+    const users = request.app.locals.users;
+    users.deleteOne({"_id": new mongodb.ObjectId(request.session.authInfo._id)}, function(err, result){
+        console.log(result);
+    });
+    request.session.destroy((err) => {
+        if (err) return console.log(err);
+        response.redirect('/');
+    });
 });
 app.get("/logout", function (request, response) {
     request.session.destroy((err) => {
         if (err) return console.log(err);
-        response.redirect('/login');
+        response.redirect('/');
     });
 });
 app.post("/canIlogin", function (request, response) {
@@ -117,7 +115,11 @@ app.post("/canIlogin", function (request, response) {
             return "Неверный пароль";
         } else {
             rp.isError = false;
+            console.log(result)
             request.session.authInfo = responsedata.reply = result
+            response.cookie('userName', result.userName);
+            response.cookie('fullName', result.fullName);
+            response.cookie('statusText', result.statusText);
             return "Успешная авторизация";
         }
     }).catch((err) => {
@@ -189,7 +191,8 @@ app.post("/canIregister", function (request, response) {
                 password: sha256(d.password),
                 email: d.email,
                 fullName: d.fullName,
-                regDate: new Date(Date.now())
+                regDate: new Date(Date.now()),
+                statusText: "Скоро здесь будет ваш статус"
             };
             rp.isError = false;
             return users.insertOne(userProfile); // Возвращаем промис
@@ -197,8 +200,6 @@ app.post("/canIregister", function (request, response) {
             return "Этот никнейм занят. Если вы владелец, попробуйте <a href='/restore' style='color: #32017d;'>восстановить аккаунт</a>.";
         } else if (result.email === d.email) {
             return "Эта почта занята. Если вы владелец, попробуйте <a href='/restore' style='color: #32017d;'>восстановить аккаунт</a>.";
-        } else {
-            return "Я вообще не ебу, что происходит";
         }
     }).catch((err) => {
         console.log(err);
@@ -206,6 +207,9 @@ app.post("/canIregister", function (request, response) {
         return err;
     }).then((result) => {
         rp.info = rp.isError ? result : (request.session.authInfo = responsedata.reply = result.ops[0]) && "Регистрация успешна";
+        response.cookie('userName', rp.info.userName);
+        response.cookie('fullName', rp.info.fullName);
+        response.cookie('statusText', rp.info.statusText);
         response.json(responsedata);
     });
 });
@@ -215,14 +219,63 @@ app.post("/loadChatHistory", function (request, response) {
 app.post("/sendMsgInChat", function (request, response) {
     // TODO: Проверка Авторизации и доступа к конкретному чату, если успешно, закинуть сообщение в комет канал, затем в базу
 });
-// const WebSocket = require('ws')
-// const wss = new WebSocket.Server({ port: 8080 })
-// wss.on('connection', ws => {
-//     ws.on('message', message => {
-//         console.log(`Received message => ${message}`)
-//     })
-//     ws.send('ho!')
-// })
+app.post("/loadListOfUsersInChat", function (request, response) {
+    // TODO: Проверка Авторизации и доступа к конкретному чату, если успешно, отправить список всех пользователей
+});
+
+const mongoClient = new mongodb.MongoClient(mongoLink, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+});
+let dbClient;
+const server = http.createServer(app);
+const wss = new WebSocket.Server({
+    server
+});
+wss.on('connection', (ws) => {
+    ws.isAlive = true;
+    ws.on('pong', () => {
+        ws.isAlive = true;
+    });
+    ws.on('message', (message) => {
+        console.log('received: %s', message);
+
+        const broadcastRegex = /^broadcast:/;
+
+        if (broadcastRegex.test(message)) {
+            message = message.replace(broadcastRegex, '');
+            wss.clients
+                .forEach(client => {
+                    if (client !== ws) {
+                        client.send(`Hello, broadcast message -> ${message}`);
+                    }
+                });
+
+        } else {
+            ws.send(`Hello, you sent -> ${message}`);
+        }
+    });
+    ws.send('Hi there, I am a WebSocket server');
+});
+setInterval(() => {
+    // Проверка на то, оставлять ли соединение активным
+    wss.clients.forEach((ws) => {
+        // Если соединение мертво, завершить
+        if (!ws.isAlive) return ws.terminate();
+        // обьявить все соединения мертвыми, а тех кто откликнется на ping, сделать живыми
+        ws.isAlive = false;
+        ws.ping(null, false, true);
+    });
+}, 10000);
+mongoClient.connect(function (err, client) {
+    if (err) return console.log(err);
+    dbClient = client;
+    app.locals.users = client.db().collection("users");
+    // app.locals.messages = client.db().collection("messages");
+    server.listen(port, () => {
+        console.log(`Server started on ${server.address()} :)`);
+    });
+});
 process.on("SIGINT", () => {
     dbClient.close();
     process.exit();
