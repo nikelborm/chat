@@ -4,17 +4,20 @@
   "private": true,
   "dependencies": {
     "connect-redis": "^4.0.3",
+    "cookie-parser": "^1.4.4",
     "express": "^4.17.1",
     "express-favicon": "^2.0.1",
     "express-session": "^1.17.0",
+    "jquery": "^3.4.1",
+    "jquery-mousewheel": "^3.1.13",
+    "jscrollpane": "^2.2.1",
     "mongodb": "^3.4.1",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
+    "react-scripts": "^3.3.0",
     "redis": "^2.8.0",
-    "cookie-parser": "^1.4.4",
     "sha256": "^0.2.0",
-    "ws": "^7.2.1",
-    "react-scripts": "^3.3.0"
+    "ws": "^7.2.1"
   },
   "scripts": {
     "start_development_server": "react-scripts start",

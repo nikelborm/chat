@@ -22,7 +22,6 @@ export class ChatArea extends Component {
         //         });
         //         const block = subThis.chatList.current;
         //         block.scrollTop = block.scrollHeight;
-        //         // $(function() { $('.chat-area > .chat-list').jScrollPane({ mouseWheelSpeed: 30 }); });
         //         cometApi.subscription("globalChat.messages", (e) => {
         //             // console.log(e);
         //             subThis.setState({
@@ -35,34 +34,24 @@ export class ChatArea extends Component {
         //         console.error("Отчёт об ошибке: " + report.text + " Код состояния: " + report.code);
         //     }
         // };
-        // send_JSON_to_server({target: "load"}, 'chat_handler.php', loadCallBack);
-        this.setState({ msgList: [
-            {
-                author: 'rrr',
-                text: "<span class='blue-label'>Kristi Galeeva</span> I see what you did there.",
-                time: '4:20 am'
-            },
-            {
-                author: 'rrr',
-                text: "Hey, do you like the new interface? It's done with Font Awesome",
-                time: '4:20 am'
-            },
-            {
-                author: 'TEST',
-                text: "Hey, do you like the new interface? It's done with Font Awesome, ",
-                time: '4:20 am'
-            },
-            {
-                author: 'TEST',
-                text: "<span class='blue-label'>Kristi Galeeva</span> I see what you did there.",
-                time: '4:20 am'
-            },
-            {
-                author: 'CLEANER',
-                text: '☺☺☺☺☺☺☺☺',
-                time: '4:20 am'
+        const data = {
+            room: "global"
+        };
+        fetch(document.location.origin + '/loadChatHistory', {
+            method: 'post',
+            body: JSON.stringify(data),
+            headers: new Headers({
+                'Content-Type': 'application/json'
+            })
+        }).then((response) => {
+            return response.json()
+        }).then((data) => {
+            console.log(data)
+            const {reply, report} = data;
+            if (!report.isError && reply.length !== 0) {
+                this.setState({ msgList: reply });
             }
-        ] });
+        });
     }
     render() {
         // TODO: сделать подгрузку автоматической с помощью COMET

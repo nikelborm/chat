@@ -9,7 +9,8 @@ export function Message(props) {
         </div>
         <div className="message">
             <p>
-                {text}
+                {text.replace(/@(\w{1,50})/g, '<a href="domain.com/$1">$&</a>').replace(/#[\wА-Яа-яЁё]{1,50}/g, '<a href="#" class="hashtag">$&</a>')}
+                {/* TODO: Заставить эту хрень работать как положено */}
             </p>
             <span className="msg-time">
                 {time}

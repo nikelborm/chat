@@ -224,6 +224,34 @@ app.post("/canIregister", function (request, response) {
 });
 app.post("/loadChatHistory", function (request, response) {
     // TODO: Проверка Авторизации и доступа к конкретному чату, если успешно, отправить всю историю чата
+    let responsedata = {
+        report: {
+            isError: true,
+            info: ""
+        },
+        reply: {}
+    }
+    let rp = responsedata.report;
+    const d = request.body; // data
+
+    const isRequestCorrect = isStr(d.room);
+    if (!isRequestCorrect) {
+        rp.info = "Неправильно составлен запрос";
+        return response.json(responsedata);
+    }
+    const messages = request.app.locals.messages;
+    if (request.session.authInfo.rooms.includes(d.room)) {
+        messages.find({room:d.room},{room:0}).toArray(function(err, results){
+            if (err) return console.log(err);
+            responsedata.reply = results;
+            rp.isError = false;
+            rp.info = "Данные успешно загружены";
+            response.json(responsedata);
+        });
+    } else {
+        rp.info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
+        response.json(responsedata);
+    }
 });
 app.post("/sendMsgInChat", function (request, response) {
     // TODO: Проверка Авторизации и доступа к конкретному чату, если успешно, закинуть сообщение в комет канал, затем в базу
@@ -251,12 +279,13 @@ wss.on('connection', (ws) => {
         const broadcastRegex = /^broadcast:/;
         if (broadcastRegex.test(message)) {
             message = message.replace(broadcastRegex, '');
-            wss.clients
-                .forEach(client => {
-                    if (client !== ws) {
-                        client.send(`Hello, broadcast message -> ${message}`);
-                    }
-                });
+            console.log(ws);
+            wss.clients.forEach(client => {
+                console.log(client);
+                if (client !== ws) {
+                    client.send(`Hello, broadcast message -> ${message}`);
+                }
+            });
         } else {
             ws.send(`Hello, you sent -> ${message}`);
         }

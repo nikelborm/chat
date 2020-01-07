@@ -6,7 +6,6 @@ export class MyAccountInfo extends Component {
         imgIsLoading: true,
         imgLink: ""
     }
-
     render() {
         const userName = getCookie("userName");
         const fullName = getCookie("fullName");
