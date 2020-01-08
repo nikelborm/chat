@@ -9,7 +9,7 @@ export class ParticipantsList extends Component {
                 <li className="item"><a href="#"><i className="fa fa-list-alt"></i><span>Участники</span></a></li>
                 <li className="item active"><a href="#"><i className="fa fa-user"></i><span>Команда чата</span><i className="fa fa-times"></i></a></li>
                 <ul>
-                    {listOfUsers.map((item) => <Participant key={item.id} data={item} />)}
+                    {listOfUsers && listOfUsers.map((item) => <Participant key={item.id} data={item} />)}
                 </ul>
                 {!listOfUsers.length && <strong>Сообщений пока нет, но вы можете это исправить!</strong>}
             </ul>

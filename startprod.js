@@ -249,17 +249,15 @@ app.post("/sendMsgInChat", function (request, response) {
     let resdata = createEmptyResponseData();
     let rp = resdata.report;
     const d = request.body; // data
-
     const isRequestCorrect = isStr(d.room) && isStr(d.message);
     if (!isRequestCorrect) {
         rp.info = "Неправильно составлен запрос";
     } else if (d.message === "") {
         rp.info = "Вы отправили пустое сообщение"
     }
-    if (!rp.info) {
+    if (rp.info) {
         return response.json(resdata);
     }
-
     if (request.session.authInfo.rooms.includes(d.room)) {
         const message = {
             room: d.room,

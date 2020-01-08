@@ -81,7 +81,7 @@ b{
 .window-title > .title{
 	overflow: hidden;
 	text-align: center;
-  font-weight: bold;
+    font-weight: bold;
 }
 .window-title > .expand{
 	position: absolute;
@@ -164,13 +164,13 @@ b{
 	top: 0;
 	bottom: 0;
 	left: 176px;
-  right:175px;
+    right:175px;
 	box-shadow: inset 0 1px 3px rgba(207, 218, 225, 0.42)
 }
 .chat-area .title{
 	padding: 10px;
 	overflow: hidden;
-  line-height:15px;
+    line-height:15px;
 }
 .chat-area .title .fa-search{
 	font-size: 14px;
@@ -268,7 +268,7 @@ b{
 	margin-right: 10px;
 	cursor: pointer;
 }
-.input-area > input{
+.input-area > button{
 	background: #a0b4c0;
 	border: none;
     letter-spacing:1px;
