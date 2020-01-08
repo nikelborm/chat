@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { MessagesList } from "./MessagesList";
+import getElById from './getElById';
 export class ChatArea extends Component {
     // constructor(props) {
     //     super(props);
@@ -8,32 +9,27 @@ export class ChatArea extends Component {
         msgList: [],
         isLoading: false
     };
+    sendMsgInChat = () => {
+        const data = {
+            room: "global",
+            message: getElById("inputArea").value
+        };
+        fetch(document.location.origin + '/sendMsgInChat', {
+            method: 'post',
+            body: JSON.stringify(data),
+            headers: new Headers({
+                'Content-Type': 'application/json'
+            })
+        }).then((response) => {
+            return response.json()
+        }).then((data) => {
+            console.log(data)
+            const {report} = data;
+            if (!report.isError) {
+            }
+        });
+    }
     componentDidMount() {
-        // eslint-disable-next-line no-unused-vars
-        const subThis = this;
-        // var loadCallBack = function() {
-        //     // this это обьект xhr внутри send_JSON_to_server с коллбэком (3-й параметр) на обработке состояния запроса
-        //     // subThis это всплывающий контекст компонента
-        //     const {report, reply} = JSON.parse(this.responseText);
-        //     if (report.status) {
-        //         console.info("Отчёт об успехе: " + report.text + " Код состояния: " + report.code);
-        //         subThis.setState({
-        //             msgList: reply
-        //         });
-        //         const block = subThis.chatList.current;
-        //         block.scrollTop = block.scrollHeight;
-        //         cometApi.subscription("globalChat.messages", (e) => {
-        //             // console.log(e);
-        //             subThis.setState({
-        //                 msgList: subThis.state.msgList.concat(e)
-        //             });
-        //             const block = subThis.chatList.current;
-        //             block.scrollTop = block.scrollHeight;
-        //         });
-        //     } else {
-        //         console.error("Отчёт об ошибке: " + report.text + " Код состояния: " + report.code);
-        //     }
-        // };
         const data = {
             room: "global"
         };
@@ -68,7 +64,7 @@ export class ChatArea extends Component {
                     <i className="fa fa-smile-o"></i>
                     <i className="fa fa-paperclip"></i>
                 </div>
-                <input type="button" defaultValue="Ввод" id="send" className="send-btn" />
+                <input type="button" defaultValue=">" id="send" onclick={this.sendMsgInChat} className="send-btn" />
             </div>
         </div>);
     }

@@ -260,7 +260,7 @@ b{
 	padding: 0 10px;
 	outline: none;
 	color: #5D7185;
-	min-width: 271px;
+	min-width: 318px;
 }
 .input-area .input-wrapper i{
 	font-size: 18px;
@@ -271,16 +271,16 @@ b{
 .input-area > input{
 	background: #a0b4c0;
 	border: none;
-  letter-spacing:1px;
+    letter-spacing:1px;
 	font-weight: bold;
 	color: #fff;
 	border-radius: 5px;
 	float:right;
-	height: 30px;
+	height: 32px;
 	line-height: 30px;
 	cursor: pointer;
 	font-family: 'Open Sans', Arial, sans-serif;
-   outline: none;
+    outline: none;
 }
 .right-tabs{
 	position: absolute;

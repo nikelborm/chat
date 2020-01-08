@@ -13,7 +13,29 @@ const WebSocket = require('ws')
 function isStr(value) {
     return typeof value === "string"
 }
-
+function logout(request, response) {
+    request.session.destroy((err) => {
+        if (err) return console.log(err);
+        response.clearCookie("userName");
+        response.clearCookie("fullName");
+        response.clearCookie("statusText");
+        response.redirect('/');
+    });
+}
+function createEmptyResponseData() {
+    return {
+        report: {
+            isError: true,
+            info: ""
+        },
+        reply: {}
+    }
+}
+function fillCookies(response, userName, fullName, statusText) {
+    response.cookie('userName', userName);
+    response.cookie('fullName', fullName);
+    response.cookie('statusText', statusText);
+}
 // console.log(Object.getOwnPropertyNames(users.__proto__))
 const port = process.env.PORT || 3000;
 const mongoLink = process.env.MONGODB_URI || "mongodb://myUserAdmin:0000@localhost:27017/admin";
@@ -67,36 +89,17 @@ app.get("/chat", function (request, response) {
 });
 app.use("/chat", express.static(path.join(__dirname, 'build')));
 app.get("/deleteAccount", function(request, response) {
-    const users = request.app.locals.users;
+
     users.deleteOne({"_id": new mongodb.ObjectId(request.session.authInfo._id)}, function(err, result){
         console.log(result);
     });
-    request.session.destroy((err) => {
-        if (err) return console.log(err);
-        response.clearCookie("userName");
-        response.clearCookie("fullName");
-        response.clearCookie("statusText");
-        response.redirect('/');
-    });
+    logout(request, response);
 });
-app.get("/logout", function (request, response) {
-    request.session.destroy((err) => {
-        if (err) return console.log(err);
-        response.clearCookie("userName");
-        response.clearCookie("fullName");
-        response.clearCookie("statusText");
-        response.redirect('/');
-    });
-});
+app.get("/logout", logout);
+
 app.post("/canIlogin", function (request, response) {
-    let responsedata = {
-        report: {
-            isError: true,
-            info: ""
-        },
-        reply: {}
-    }
-    let rp = responsedata.report;
+    let resdata = createEmptyResponseData();
+    let rp = resdata.report;
     const d = request.body; // data
 
     const isRequestCorrect = isStr(d.userName) && isStr(d.password);
@@ -108,9 +111,9 @@ app.post("/canIlogin", function (request, response) {
         rp.info = "Вы не ввели пароль";
     }
     if (rp.info) {
-        return response.json(responsedata);
+        return response.json(resdata);
     }
-    const users = request.app.locals.users;
+
     users.findOne({$or: [{ userName: d.userName }, { email: d.email }]})
     .then((result) => {
         if (result === null) {
@@ -119,10 +122,8 @@ app.post("/canIlogin", function (request, response) {
             return "Неверный пароль";
         } else {
             rp.isError = false;
-            request.session.authInfo = responsedata.reply = result
-            response.cookie('userName', result.userName);
-            response.cookie('fullName', result.fullName);
-            response.cookie('statusText', result.statusText);
+            request.session.authInfo = resdata.reply = result;
+            fillCookies(response, result.userName, result.fullName, result.statusText );
             return "Успешная авторизация";
         }
     }).catch((err) => {
@@ -130,24 +131,18 @@ app.post("/canIlogin", function (request, response) {
         return err;
     }).then((result) => {
         rp.info = result;
-        response.json(responsedata);
+        response.json(resdata);
     });
 });
 app.post("/canIregister", function (request, response) {
-    let responsedata = {
-        report: {
-            isError: true,
-            info: ""
-        },
-        reply: {}
-    }
-    let rp = responsedata.report;
+    let resdata = createEmptyResponseData();
+    let rp = resdata.report;
     const d = request.body;
 
     const isRequestCorrect = isStr(d.userName) && isStr(d.password) && isStr(d.repeatPassword) && isStr(d.fullName) && isStr(d.email);
     if (!isRequestCorrect) {
         rp.info = "Неправильно составлен запрос";
-        return response.json(responsedata);
+        return response.json(resdata);
     }
     rp.info = (function (d) {
         switch ("") {
@@ -182,13 +177,23 @@ app.post("/canIregister", function (request, response) {
     //     rp.info = "Пароль должен содержать хотя бы 1 латинскую букву";
     // }
     if (rp.info) {
-        return response.json(responsedata);
+        return response.json(resdata);
     }
-    const users = request.app.locals.users;
+
     users.findOne({ $or: [{ userName: d.userName }, { email: d.email }] })
     .then((result) => {
         if (result === null) {
             // Пользователя нет в системе
+            return "";
+        } else if (result.userName === d.userName) {
+            return "Этот никнейм занят. Если вы владелец, попробуйте <a href='/restore' style='color: #32017d;'>восстановить аккаунт</a>.";
+        } else if (result.email === d.email) {
+            return "Эта почта занята. Если вы владелец, попробуйте <a href='/restore' style='color: #32017d;'>восстановить аккаунт</a>.";
+        }
+    }).then((errorText) => {
+        if (errorText) {
+            return rp.info = errorText;
+        } else {
             const userProfile = {
                 userName: d.userName,
                 password: sha256(d.password),
@@ -199,62 +204,84 @@ app.post("/canIregister", function (request, response) {
             };
             rp.isError = false;
             return users.insertOne(userProfile); // Возвращаем промис
-        } else if (result.userName === d.userName) {
-            return "Этот никнейм занят. Если вы владелец, попробуйте <a href='/restore' style='color: #32017d;'>восстановить аккаунт</a>.";
-        } else if (result.email === d.email) {
-            return "Эта почта занята. Если вы владелец, попробуйте <a href='/restore' style='color: #32017d;'>восстановить аккаунт</a>.";
+        }
+    }).then((result)=>{
+        if (!rp.isError) {
+            const data = result.ops[0];
+            request.session.authInfo = resdata.reply = data;
+            fillCookies(response, data.userName, data.fullName, data.statusText );
+            rp.info = "Регистрация успешна";
         }
     }).catch((err) => {
         console.log(err);
         rp.isError = true;
-        return err;
-    }).then((result) => {
-        if (rp.isError) {
-            rp.info = result;
-        } else {
-            const data = result.ops[0];
-            request.session.authInfo = responsedata.reply = data;
-            response.cookie('userName', data.userName);
-            response.cookie('fullName', data.fullName);
-            response.cookie('statusText', data.statusText);
-            rp.info = "Регистрация успешна";
-        }
-        response.json(responsedata);
+        rp.info = err;
+    }).finally(() => {
+        response.json(resdata);
     });
 });
 app.post("/loadChatHistory", function (request, response) {
-    // TODO: Проверка Авторизации и доступа к конкретному чату, если успешно, отправить всю историю чата
-    let responsedata = {
-        report: {
-            isError: true,
-            info: ""
-        },
-        reply: {}
-    }
-    let rp = responsedata.report;
+    // TODO: Сделать проверку есть ли пользователь (хранящийся в сессии) в базе (на случай если была авторизация на нескольких устройствах, а акк удалён из базы)
+    let resdata = createEmptyResponseData();
+    let rp = resdata.report;
     const d = request.body; // data
 
     const isRequestCorrect = isStr(d.room);
     if (!isRequestCorrect) {
         rp.info = "Неправильно составлен запрос";
-        return response.json(responsedata);
+        return response.json(resdata);
     }
-    const messages = request.app.locals.messages;
+
     if (request.session.authInfo.rooms.includes(d.room)) {
-        messages.find({room:d.room},{room:0}).toArray(function(err, results){
+        messages.find({room: d.room}, {room: 0}).toArray(function(err, results){
             if (err) return console.log(err);
-            responsedata.reply = results;
+            resdata.reply = results;
             rp.isError = false;
             rp.info = "Данные успешно загружены";
-            response.json(responsedata);
+            response.json(resdata);
         });
     } else {
         rp.info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
-        response.json(responsedata);
+        response.json(resdata);
     }
 });
 app.post("/sendMsgInChat", function (request, response) {
-    // TODO: Проверка Авторизации и доступа к конкретному чату, если успешно, закинуть сообщение в комет канал, затем в базу
+    let resdata = createEmptyResponseData();
+    let rp = resdata.report;
+    const d = request.body; // data
+
+    const isRequestCorrect = isStr(d.room) && isStr(d.message);
+    if (!isRequestCorrect) {
+        rp.info = "Неправильно составлен запрос";
+    } else if (d.message === "") {
+        rp.info = "Вы отправили пустое сообщение"
+    }
+    if (!rp.info) {
+        return response.json(resdata);
+    }
+
+    if (request.session.authInfo.rooms.includes(d.room)) {
+        const message = {
+            room: d.room,
+            author: request.session.authInfo.userName,
+            text: d.message,
+            time: new Date(Date.now())
+        };
+        messages.insertOne(message)
+        .then((result) => {
+            rp.info = "Сообщение успешно отправлено";
+            rp.isError = false;
+            // TODO: Добавить отправку всем websocket юзерам
+        }).catch((err) => {
+            console.log(err);
+            rp.info = err;
+        }).finally(() => {
+            response.json(resdata);
+        });
+    } else {
+        rp.info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
+        response.json(resdata);
+    }
 });
 app.post("/loadListOfUsersInChat", function (request, response) {
     // TODO: Проверка Авторизации и доступа к конкретному чату, если успешно, отправить список всех пользователей
@@ -265,6 +292,8 @@ const mongoClient = new mongodb.MongoClient(mongoLink, {
     useUnifiedTopology: true
 });
 let dbClient;
+let users;
+let messages;
 const server = http.createServer(app);
 const wss = new WebSocket.Server({
     server
@@ -305,8 +334,8 @@ setInterval(() => {
 mongoClient.connect(function (err, client) {
     if (err) return console.log(err);
     dbClient = client;
-    app.locals.users = client.db().collection("users");
-    app.locals.messages = client.db().collection("messages");
+    users = client.db().collection("users");
+    messages = client.db().collection("messages");
     server.listen(port, function(){
         console.log("Сервер слушает")
     });
