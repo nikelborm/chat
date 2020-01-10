@@ -392,10 +392,20 @@ ul.tabs-container{
 	color: #8391a1;
 	margin-top: 5px;
 }
-.jspDrag{
-	background: #A1AFC4;
-	border-radius: 10px;
+::-webkit-scrollbar-track {
+	background-color: #DBDBDB;
 }
-.jspVerticalBar{
-	width: 7px;
+::-webkit-scrollbar-thumb {
+	border-radius: 3px;
+	background-color:#A1AFC4;
+	cursor: pointer;
+}
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(0, 0, 0, 0.6);
+}
+::-webkit-scrollbar-thumb:active {
+	background: rgba(0, 0, 0, 0.8);
+}
+::-webkit-scrollbar{
+	width: 8px;
 }

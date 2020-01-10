@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import React from 'react';
-export function Participant(props) {
+function Participant(props) {
     const { userName, onlineStatus } = props.data;
     return (<li>
         <a href="#">
@@ -10,3 +10,4 @@ export function Participant(props) {
         </a>
     </li>);
 }
+export default Participant;

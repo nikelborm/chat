@@ -1,45 +1,31 @@
 import React, { Component, createRef } from 'react';
-import { Message } from './Message';
-import $ from "jquery";
-import "jscrollpane";
-import "jquery-mousewheel";
-export class MessagesList extends Component {
+import Message from './Message';
+class MessagesList extends Component {
     constructor(props) {
         super(props);
-        this.chatList = createRef()
+        this.chatList = createRef();
+        this.down = createRef();
     }
-
     componentDidUpdate() {
-        $(() => {
-            console.log("успех");
-            // сохранение dom дерева, до момента изменений внесённых jScrollPane
-            this.props.reserve = $('.chat-area').html()
-            // jScrollPane оборачивает .chat-list своими div-ами
-            $('.chat-list').jScrollPane({ mouseWheelSpeed: 30 });
-            document.getElementsByClassName("jspContainer")[0].scrollTo(0, document.getElementById('down').offsetTop)
-            const jspDrag = document.getElementsByClassName("jspDrag")[0];
-            const jspTrack = document.getElementsByClassName("jspTrack")[0].offsetHeight;
-            const jspPane = document.getElementsByClassName("jspPane")[0];
-            jspDrag.style.top = jspTrack - jspDrag.offsetHeight + "px"
-            jspPane.style.top = jspTrack - jspPane.offsetHeight + "px"
-        });
-    }
-    shouldComponentUpdate() {
-        // возврат dom дерева, к состоянию, с которым может работать react
-        $('.chat-list').html(this.props.reserve);
-        return true;
+        this.chatList.current.scrollTo(0, this.down.current.offsetTop);
     }
     render() {
-        const { data } = this.props;
-        console.log(data);
+        const { msgList, isLoading } = this.props;
+        let info;
+        if (isLoading) {
+            info =(<strong>Сообщения загружаются, пожалуйста подождите</strong>)
+        } else if ( !msgList.length ){
+            info = (<strong>Сообщений пока нет, но вы можете это исправить!</strong>)
+        }
         return (
-            <div className="chat-list" ref={this.chatList}>
+            <div className="chat-list" ref={this.chatList} style={{overflowX: "hidden", overflowY: "scroll"}}>
                 <ul>
-                    {data.map((item) => <Message key={item._id} data={item} />)}
+                    {msgList.map((item) => <Message key={item._id} data={item} />)}
                 </ul>
-                {!data.length && <strong>Сообщений пока нет, но вы можете это исправить!</strong>}
-                <span id="down"></span>
+                {info}
+                <span ref={this.down}></span>
             </div>
         );
     }
 }
+export default MessagesList;

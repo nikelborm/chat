@@ -1,8 +1,8 @@
-import React, { Component } from 'react';
-export class TabsContainer extends Component {
-    render() {
-        // TODO: добавить подгрузку онлайновых и работу с вкладками
-        return (<ul className="tabs-container">
+import React from 'react';
+function TabsContainer() {
+    // TODO: добавить подгрузку онлайновых и работу с вкладками
+    return (
+        <ul className="tabs-container">
             <li className="active">
                 <ul className="member-list">
                     <li><span className="status online"><i className="fa fa-circle-o"></i></span><span>Kristi Galeeva</span></li>
@@ -13,6 +13,8 @@ export class TabsContainer extends Component {
             </li>
             <li></li>
             <li></li>
-        </ul>);
-    }
+        </ul>
+    );
+
 }
+export default TabsContainer;

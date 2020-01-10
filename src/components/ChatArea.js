@@ -1,16 +1,15 @@
 import React, { Component } from 'react';
-import { MessagesList } from "./MessagesList";
-import getElById from './getElById';
-export class ChatArea extends Component {
+import MessagesList from "./MessagesList";
+class ChatArea extends Component {
     constructor(props) {
         super(props);
-        this.send_button = React.createRef();
+        this.inputArea = React.createRef();
     }
     state = {
         msgList: [],
-        isLoading: false
+        isLoading: true
     };
-    componentDidMount() {
+    componentDidMount = () => {
         const data = {
             room: "global"
         };
@@ -26,15 +25,19 @@ export class ChatArea extends Component {
             console.log(data)
             const {reply, report} = data;
             if (!report.isError && reply.length !== 0) {
-                this.setState({ msgList: reply });
+                this.setState({
+                    msgList: reply,
+                    isLoading: false
+                });
+                this.props.chatHistoryIsLoaded(this);
             }
         });
-    }
-    sendMsgInChat(e) {
+    };
+    sendMsgInChat = (e) => {
         e.preventDefault();
         const data = {
             room: "global",
-            message: getElById("inputArea").value
+            message: this.inputArea.current.value
         };
         fetch(document.location.origin + '/sendMsgInChat', {
             method: 'post',
@@ -43,31 +46,31 @@ export class ChatArea extends Component {
                 'Content-Type': 'application/json'
             })
         }).then((response) => {
-            return response.json()
+            return response.json();
         }).then((data) => {
-            console.log(data)
-            const {report} = data;
-            if (!report.isError) {
-            }
+            console.log(data);
         });
-    }
+    };
     render() {
         // TODO: сделать подгрузку автоматической с помощью COMET
-        const { msgList } = this.state;
-        return (<div className="chat-area">
-            <div className="title">
-                <b> Переписка </b>
-                <i className="fa fa-search"></i>
-            </div>
-            <MessagesList data={msgList} />
-            <form className="input-area">
-                <div className="input-wrapper">
-                    <input type="text" defaultValue="" id="inputArea" />
-                    <i className="fa fa-smile-o"></i>
-                    <i className="fa fa-paperclip"></i>
+        const { msgList, isLoading } = this.state;
+        return (
+            <div className="chat-area">
+                <div className="title">
+                    <b> Переписка </b>
+                    <i className="fa fa-search"></i>
                 </div>
-                <button onClick={this.sendMsgInChat} className="send-btn" ref="send_button">{">"}</button>
-            </form>
-        </div>);
+                <MessagesList msgList={msgList} isLoading={isLoading} />
+                <form className="input-area">
+                    <div className="input-wrapper">
+                        <input type="text" defaultValue="" ref={this.inputArea}/>
+                        <i className="fa fa-smile-o"></i>
+                        <i className="fa fa-paperclip"></i>
+                    </div>
+                    <button onClick={this.sendMsgInChat} className="send-btn">{">"}</button>
+                </form>
+            </div>
+        );
     }
 }
+export default ChatArea;

@@ -1,17 +1,13 @@
 /* eslint-disable no-useless-concat */
 import React, { Component } from 'react';
 import getCookie from './getCookie';
-export class MyAccountInfo extends Component {
+class MyAccountInfo extends Component {
     state = {
         imgIsLoading: true,
         imgLink: ""
     }
-    render() {
-        const userName = getCookie("userName");
-        const fullName = getCookie("fullName");
-        const statusText = getCookie("statusText");
-        if (this.state.imgIsLoading) {
-            fetch('https://randomuser.me/api/?results=1&inc=picture&noinfo')
+    componentDidMount = () => {
+        fetch('https://randomuser.me/api/?results=1&inc=picture&noinfo')
             .then(function (response) {
                 return response.json()
             }).then((data) => {
@@ -20,7 +16,11 @@ export class MyAccountInfo extends Component {
                     imgIsLoading: false
                 })
             });
-        }
+    };
+    render() {
+        const userName = getCookie("userName");
+        const fullName = getCookie("fullName");
+        const statusText = getCookie("statusText");
         return (
             <div className="my-account">
                 <div className="image">
@@ -39,3 +39,4 @@ export class MyAccountInfo extends Component {
         );
     }
 }
+export default MyAccountInfo;
