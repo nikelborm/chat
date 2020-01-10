@@ -16,6 +16,7 @@ function Message(props) {
                     {/* TODO: Заставить эту хрень работать как положено */}
                 </p>
                 <span className="msg-time">
+                    {/* TODO: организовать работу со временем */}
                     {time}
                 </span>
             </div>

@@ -4,7 +4,7 @@ import ChatArea from "./ChatArea";
 import RightTabs from "./RightTabs";
 class WindowArea extends Component {
     chatHistoryIsLoaded = (childThis) => {
-        let socket = new WebSocket("ws://"+document.location.host);
+        let socket = new WebSocket("wss://"+document.location.host);
         socket.onopen = function (e) {
             console.log("[open] Соединение установлено");
             // socket.send("Меня зовут Джон");
