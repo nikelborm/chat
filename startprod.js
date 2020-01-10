@@ -285,7 +285,8 @@ wss.on('connection', (ws, request) => {
     const cookies = cookie.parse(request.headers.cookie);
     const sid = cookieParser.signedCookie(cookies["connect.sid"], secretKey);
     storage.get(sid, (err, ss) => {
-        if (!ss.authInfo) {
+        console.log(err);
+        if (!ss || !ss.authInfo) {
             ws.send("Вы не авторизованы!");
             ws.terminate();
         } else {
