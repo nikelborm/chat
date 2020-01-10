@@ -29,8 +29,8 @@ class MyAccountInfo extends Component {
                     {/* TODO: Сделать чтобы можно выбрать свой онлайн и он ставился после задержки: offline, online, idle */}
                 </div>
                 <div className="name">
-                    <span id="myName">
-                    {fullName} ({userName})
+                    <span id="myName" style={{overflow:"hidden"}} title={userName}>
+                    {fullName}
                     </span>
                     <i className="fa fa-angle-down"></i>
                     <span className="availability">{statusText}</span>

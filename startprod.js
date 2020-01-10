@@ -71,8 +71,13 @@ app.use("/restore", express.static(path.join(__dirname, 'restoreAccountPage')));
 // Вместе с страницей логина делаются доступными все файлы в нужной директории
 // Если человек сам зашёл на чат или его редиректнуло, так же идёт проверка авторизован ли он, если да то он остаётся тут, иначе его редиректит на логин
 // Становятся доступными все файлы в директории чата
+// TODO: Сделать проверку есть ли пользователь (хранящийся в сессии) в базе (на случай если была авторизация на нескольких устройствах, а акк удалён из базы) в этих обработчиках:
+//   /
+//   /chat
+//   /loadChatHistory
+//   /loadListOfUsersInChat
+
 app.get("/", function (request, response) {
-    // TODO: Сделать проверку есть ли пользователь (хранящийся в сессии) в базе (на случай если была авторизация на нескольких устройствах, а акк удалён из базы)
     if (request.session.authInfo) {
         response.redirect('/chat'); // на чат
     } else {
@@ -81,7 +86,6 @@ app.get("/", function (request, response) {
 });
 app.use("/", express.static(path.join(__dirname, 'loginPage')));
 app.get("/chat", function (request, response) {
-    // TODO: Сделать проверку есть ли пользователь (хранящийся в сессии) в базе (на случай если была авторизация на нескольких устройствах, а акк удалён из базы)
     if (request.session.authInfo) {
         response.sendFile(path.join(__dirname, 'build', 'index.html'));
     } else {
@@ -91,6 +95,7 @@ app.get("/chat", function (request, response) {
 app.use("/chat", express.static(path.join(__dirname, 'build')));
 app.get("/deleteAccount", function(request, response) {
     users.deleteOne({"_id": new mongodb.ObjectId(request.session.authInfo._id)}, function(err, result){
+        if (err) return console.log(err);
         console.log(result);
     });
     logout(request, response);
@@ -203,7 +208,6 @@ app.post("/canIregister", function (request, response) {
     });
 });
 app.post("/loadChatHistory", function (request, response) {
-    // TODO: Сделать проверку есть ли пользователь (хранящийся в сессии) в базе (на случай если была авторизация на нескольких устройствах, а акк удалён из базы)
     let resdata = createEmptyResponseData();
     let rp = resdata.report;
     const d = request.body; // data
@@ -211,6 +215,8 @@ app.post("/loadChatHistory", function (request, response) {
     const isRequestCorrect = isStr(d.room);
     if (!isRequestCorrect) {
         rp.info = "Неправильно составлен запрос";
+    } else if (!request.session.authInfo) {
+        rp.info = "Вы не авторизованы";
     } else if (!request.session.authInfo.rooms.includes(d.room)) {
         rp.info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
     }
@@ -218,7 +224,7 @@ app.post("/loadChatHistory", function (request, response) {
         return response.json(resdata);
     }
 
-    messages.find({room: d.room}, {room: 0}).toArray((err, results) => {
+    messages.find({room: d.room}, {projection: {room: 0}}).toArray((err, results) => {
         if (err) return console.log(err);
         resdata.reply = results;
         rp.isError = false;
@@ -233,6 +239,8 @@ app.post("/sendMsgInChat", function (request, response) {
     const isRequestCorrect = isStr(d.room) && isStr(d.message);
     if (!isRequestCorrect) {
         rp.info = "Неправильно составлен запрос";
+    } else if (!request.session.authInfo) {
+        rp.info = "Вы не авторизованы";
     } else if (d.message === "") {
         rp.info = "Вы отправили пустое сообщение"
     } else if (!request.session.authInfo.rooms.includes(d.room)) {
@@ -252,7 +260,6 @@ app.post("/sendMsgInChat", function (request, response) {
         rp.info = "Сообщение успешно отправлено";
         rp.isError = false;
         resdata.reply = result.ops[0];
-        // TODO: Добавить отправку всем websocket юзерам
         wss.clients.forEach(client => {
             if (client.authInfo.rooms.includes(d.room)) {
                 client.send(JSON.stringify({handlerType: "message", message}));
@@ -266,7 +273,29 @@ app.post("/sendMsgInChat", function (request, response) {
     });
 });
 app.post("/loadListOfUsersInChat", function (request, response) {
-    // TODO: Проверка Авторизации и доступа к конкретному чату, если успешно, отправить список всех пользователей
+    let resdata = createEmptyResponseData();
+    let rp = resdata.report;
+    const d = request.body; // data
+
+    const isRequestCorrect = isStr(d.room);
+    if (!isRequestCorrect) {
+        rp.info = "Неправильно составлен запрос";
+    } else if (!request.session.authInfo) {
+        rp.info = "Вы не авторизованы";
+    } else if (!request.session.authInfo.rooms.includes(d.room)) {
+        rp.info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
+    }
+    if (rp.info) {
+        return response.json(resdata);
+    }
+
+    users.find({rooms: d.room}, {projection: { userName:1, fullName:1 }}).toArray((err, results) => {
+        if (err) return console.log(err);
+        resdata.reply = results;
+        rp.isError = false;
+        rp.info = "Данные успешно загружены";
+        response.json(resdata);
+    });
 });
 
 const mongoClient = new mongodb.MongoClient(mongoLink, {
@@ -285,16 +314,13 @@ wss.on('connection', (ws, request) => {
     const cookies = cookie.parse(request.headers.cookie);
     const sid = cookieParser.signedCookie(cookies["connect.sid"], secretKey);
     storage.get(sid, (err, ss) => {
-        console.log(err);
-        if (!ss || !ss.authInfo) {
+        if (err) console.log(err);
+        if (!ss || !ss.authInfo || err) {
             ws.send("Вы не авторизованы!");
             ws.terminate();
         } else {
             ws.authInfo = ss.authInfo;
         }
-        // //create the session object and append on upgradeReq
-        // storage.createSession(request, ss)
-        // //setup websocket bindings
     });
     ws.on('pong', () => {
         ws.isAlive = true;
@@ -324,7 +350,6 @@ mongoClient.connect(function (err, client) {
     });
 });
 process.on("SIGINT", () => {
-    // TODO: добавить завершение WS сервера
     dbClient.close();
     process.exit();
 });

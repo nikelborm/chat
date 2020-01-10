@@ -5,34 +5,6 @@ class ChatArea extends Component {
         super(props);
         this.inputArea = React.createRef();
     }
-    state = {
-        msgList: [],
-        isLoading: true
-    };
-    componentDidMount = () => {
-        const data = {
-            room: "global"
-        };
-        fetch(document.location.origin + '/loadChatHistory', {
-            method: 'post',
-            body: JSON.stringify(data),
-            headers: new Headers({
-                'Content-Type': 'application/json'
-            })
-        }).then((response) => {
-            return response.json()
-        }).then((data) => {
-            console.log(data)
-            const {reply, report} = data;
-            if (!report.isError && reply.length !== 0) {
-                this.setState({
-                    msgList: reply,
-                    isLoading: false
-                });
-                this.props.chatHistoryIsLoaded(this);
-            }
-        });
-    };
     sendMsgInChat = (e) => {
         e.preventDefault();
         const data = {
@@ -52,8 +24,7 @@ class ChatArea extends Component {
         });
     };
     render() {
-        // TODO: сделать подгрузку автоматической с помощью COMET
-        const { msgList, isLoading } = this.state;
+        const { msgList, isLoading } = this.props;
         return (
             <div className="chat-area">
                 <div className="title">
