@@ -14,6 +14,11 @@ const WebSocket = require('ws')
 function isStr(value) {
     return typeof value === "string"
 }
+function hasIntersections(setA, setB) {
+    for (var elem of setB) {
+        if (setA.has(elem)) return true
+    }
+}
 function logout(request, response) {
     request.session.destroy((err) => {
         if (err) return console.log(err);
@@ -261,7 +266,7 @@ app.post("/sendMsgInChat", function (request, response) {
         rp.isError = false;
         resdata.reply = result.ops[0];
         wss.clients.forEach(client => {
-            if (client.authInfo.rooms.includes(d.room)) {
+            if (client.authInfo.rooms.has(d.room)) {
                 client.send(JSON.stringify({handlerType: "message", message}));
             }
         });
@@ -288,14 +293,31 @@ app.post("/loadListOfUsersInChat", function (request, response) {
     if (rp.info) {
         return response.json(resdata);
     }
-
-    users.find({rooms: d.room}, {projection: { userName:1, fullName:1 }}).toArray((err, results) => {
-        if (err) return console.log(err);
-        resdata.reply = results;
-        rp.isError = false;
-        rp.info = "Данные успешно загружены";
-        response.json(resdata);
-    });
+    let results = {};
+    const cursor = users.find({rooms: d.room}, {projection: { userName:1, fullName:1 }});
+    cursor.forEach(
+        (doc) => {
+            const id = doc._id.toString();
+            const user = {
+                userName: doc.userName,
+                fullName: doc.fullName,
+                onlineStatus: setOfActiveUserIDs[id] ? "online" : "offline"
+            };
+            results[id] = user;
+        },
+        function(err) {
+            if (err) {
+                console.log(err);
+                rp.info = err;
+            } else {
+                console.log(results)
+                resdata.reply = results;
+                rp.isError = false;
+                rp.info = "Данные успешно загружены";
+            }
+            response.json(resdata);
+        }
+    );
 });
 
 const mongoClient = new mongodb.MongoClient(mongoLink, {
@@ -305,6 +327,7 @@ const mongoClient = new mongodb.MongoClient(mongoLink, {
 let dbClient;
 let users;
 let messages;
+let setOfActiveUserIDs = {};
 const server = http.createServer(app);
 const wss = new WebSocket.Server({
     server
@@ -319,11 +342,37 @@ wss.on('connection', (ws, request) => {
             ws.send("Вы не авторизованы!");
             ws.terminate();
         } else {
-            ws.authInfo = ss.authInfo;
+            const { _id } = ws.authInfo = ss.authInfo;
+            ws.authInfo.rooms = new Set(ss.authInfo.rooms);
+            if (!setOfActiveUserIDs[_id]) {
+                setOfActiveUserIDs[_id] = 1;
+                wss.clients.forEach(client => {
+                    // TODO: Отправка только тем, кто имеет общие с подключившимся человеком комнаты
+                    if (hasIntersections(client.authInfo.rooms, ws.authInfo.rooms)) {
+                        client.send(JSON.stringify({handlerType: "isOnline", _id}));
+                    }
+                });
+            } else {
+                setOfActiveUserIDs[_id]++
+            }
         }
     });
     ws.on('pong', () => {
         ws.isAlive = true;
+    });
+    ws.on('close',() => {
+        const { _id } = ws.authInfo;
+        if (setOfActiveUserIDs[_id] === 1) {
+            delete setOfActiveUserIDs[_id];
+            wss.clients.forEach(client => {
+                // TODO: Отправка только тем, кто имеет общие с подключившимся человеком комнаты
+                if (hasIntersections(client.authInfo.rooms, ws.authInfo.rooms)) {
+                    client.send(JSON.stringify({handlerType: "isOffline", _id}));
+                }
+            });
+        } else {
+            setOfActiveUserIDs[_id]--
+        }
     });
     ws.on('message', (message) => {
         console.log('received: %s', message);
@@ -334,7 +383,10 @@ setInterval(() => {
     // Проверка на то, оставлять ли соединение активным
     wss.clients.forEach((ws) => {
         // Если соединение мертво, завершить
-        if (!ws.isAlive) return ws.terminate();
+        if (!ws.isAlive) {
+            setOfActiveUserIDs.delete(ws.authInfo._id);
+            return ws.terminate();
+        }
         // обьявить все соединения мертвыми, а тех кто откликнется на ping, сделать живыми
         ws.isAlive = false;
         ws.ping(null, false, true);
@@ -350,6 +402,8 @@ mongoClient.connect(function (err, client) {
     });
 });
 process.on("SIGINT", () => {
+    // На самом деле я не думаю, что это всерьёз будет работать
+    wss.clients.forEach((ws) => ws.close(1000, "Сервер выключен или перезагружается."));
     dbClient.close();
     process.exit();
 });

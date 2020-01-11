@@ -9,13 +9,13 @@ class WindowArea extends Component {
     }
     state = {
         msgList: [],
-        usersList: [],
+        usersInGlobalRoom: {},
         ischatHistoryLoaded: false,
         isUsersListInRoomDownloaded: false
     };
     componentDidMount = () => {
         this.loader("/loadChatHistory", "msgList", "ischatHistoryLoaded");
-        this.loader("/loadListOfUsersInChat", "usersList", "isUsersListInRoomDownloaded");
+        this.loader("/loadListOfUsersInChat", "usersInGlobalRoom", "isUsersListInRoomDownloaded");
     };
     loader = (path, pasteReplyIn, pasteSuccessIn) => {
         fetch(document.location.origin + path, {
@@ -41,21 +41,32 @@ class WindowArea extends Component {
         if (this.state.ischatHistoryLoaded && this.state.isUsersListInRoomDownloaded && !this.cometCreated) {
             let socket = new WebSocket("ws://"+document.location.host);
             socket.onopen = function (e) {
-                console.info("[open] Соединение установлено");
+                console.log("[open] Соединение установлено");
             };
             socket.onmessage = (event) => {
-                console.info("[message] Данные получены с сервера:");
+                console.log("[message] Данные получены с сервера:");
                 const data = JSON.parse(event.data);
                 console.log("Отчёт:")
                 console.log(event)
+                console.log(data)
                 if (data.handlerType === "message") {
                     this.setState({
                         msgList: this.state.msgList.concat(data.message)
                     });
+                } else if (data.handlerType === "isOnline") {
+                    this.setState((prevState) => {
+                        prevState.usersInGlobalRoom[data._id].onlineStatus = "online";
+                        return prevState;
+                    });
+                } else if (data.handlerType === "isOffline") {
+                    this.setState((prevState) => {
+                        prevState.usersInGlobalRoom[data._id].onlineStatus = "offline";
+                        return prevState;
+                    });
                 }
             };
             socket.onclose = function (event) {
-                console.info("[close] Соединение закрыто. Отчёт:");
+                console.log("[close] Соединение закрыто. Отчёт:");
                 console.log(event);
             };
             socket.onerror = function (error) {
@@ -65,37 +76,11 @@ class WindowArea extends Component {
             this.cometCreated = true;
         }
     };
-    createCometConnection = () => {
-        let socket = new WebSocket("wss://"+document.location.host);
-        socket.onopen = function (e) {
-            console.log("[open] Соединение установлено");
-            // socket.send("Меня зовут Джон");
-        };
-        socket.onmessage = (event) => {
-            console.log(`[message] Данные получены с сервера: ${event.data}`);
-            const data = JSON.parse(event.data);
-            if (data.handlerType === "message") {
-                this.setState({
-                    msgList: this.state.msgList.concat(data.message)
-                });
-            }
-        };
-        socket.onclose = function (event) {
-            if (event.wasClean) {
-                console.log(`[close] Соединение закрыто чисто, код=${event.code} причина=${event.reason}`);
-            } else {
-                console.log('[close] Соединение прервано');
-            }
-        };
-        socket.onerror = function (error) {
-            console.log(`[error] ${error.message}`);
-        };
-    };
     render() {
-        const {msgList, ischatHistoryLoaded, usersList} = this.state;
+        const {msgList, ischatHistoryLoaded, usersInGlobalRoom} = this.state;
         return (
             <div className="window-area">
-                <ConversationList usersList={usersList}/>
+                <ConversationList usersList={usersInGlobalRoom}/>
                 <ChatArea msgList={msgList} isLoading={!ischatHistoryLoaded}/>
                 <RightTabs />
             </div>
