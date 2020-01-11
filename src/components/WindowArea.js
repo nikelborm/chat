@@ -39,7 +39,8 @@ class WindowArea extends Component {
     };
     componentDidUpdate = () => {
         if (this.state.ischatHistoryLoaded && this.state.isUsersListInRoomDownloaded && !this.cometCreated) {
-            let socket = new WebSocket("ws://"+document.location.host);
+            const protocol = document.location.protocol[4] === "s" ? "wss://": "ws://"
+            let socket = new WebSocket(protocol + document.location.host);
             socket.onopen = function (e) {
                 console.log("[open] Соединение установлено");
             };
