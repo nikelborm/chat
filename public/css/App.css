@@ -206,7 +206,7 @@ b{
 .chat-area ul .name{
 	padding: 14px;
 	text-align: right;
-	width: 100px;
+	width: 80px;
 	float: left;
 	color: #5d7185;
 	font-weight: bold;
@@ -217,7 +217,7 @@ b{
 	border-left: 1px solid #cfdae1;
 	float: left;
 	color: #333f4d;
-	width: 214px;
+	width: 265px;
 }
 .chat-area ul .message > p{
 	line-height: 20px;
@@ -230,8 +230,8 @@ b{
 }
 .chat-area ul .message .msg-time{
 	position: absolute;
-	top:16px;
-	right: 15px;
+	top: 5px;
+	right: 10px;
 	color: #738ba3;
 	font-size: 9px;
 }
@@ -396,7 +396,7 @@ ul.tabs-container{
 	background-color: #DBDBDB;
 }
 ::-webkit-scrollbar-thumb {
-	border-radius: 3px;
+	border-radius: 10px;
 	background-color:#A1AFC4;
 	cursor: pointer;
 }

@@ -212,6 +212,11 @@ app.post("/canIregister", function (request, response) {
         response.json(resdata);
     });
 });
+// app.post("/canIjoinTheRoom", function (request, response) {
+//     let resdata = createEmptyResponseData();
+//     let rp = resdata.report;
+//     const d = request.body;
+// });
 app.post("/loadChatHistory", function (request, response) {
     let resdata = createEmptyResponseData();
     let rp = resdata.report;
@@ -310,7 +315,6 @@ app.post("/loadListOfUsersInChat", function (request, response) {
                 console.log(err);
                 rp.info = err;
             } else {
-                console.log(results)
                 resdata.reply = results;
                 rp.isError = false;
                 rp.info = "Данные успешно загружены";

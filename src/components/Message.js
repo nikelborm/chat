@@ -3,6 +3,7 @@ import getCookie from './getCookie';
 function Message(props) {
     const { author, text, time } = props.data;
     const myName = getCookie("userName");
+    const correctTime = new Intl.DateTimeFormat("ru",{month:"long",day:"numeric",hour:"numeric",minute:"numeric",timeZone:"Europe/Moscow"}).format(Date.parse(time));
     return (
         <li className={(author === myName) ? 'me' : ''}>
             <div className="name">
@@ -16,8 +17,7 @@ function Message(props) {
                     {/* TODO: Заставить эту хрень работать как положено */}
                 </p>
                 <span className="msg-time">
-                    {/* TODO: организовать работу со временем */}
-                    {time}
+                    {correctTime}
                 </span>
             </div>
         </li>
