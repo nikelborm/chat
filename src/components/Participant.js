@@ -6,7 +6,7 @@ function Participant(props) {
         <a href="#">
             <i className={"fa fa-circle-o " + onlineStatus} title={userName}></i>
             <span>{fullName}</span>
-            <i className="fa fa-times"></i>
+            {/* <i className="fa fa-times"></i> */}
         </a>
     </li>);
 }
