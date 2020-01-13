@@ -27,7 +27,7 @@ window.onload = function () {
             getElById("infoblock").style.background = isError ? "#e74c3c" : "#288063"
             if (!isError) {
                 setTimeout(function () {
-                    document.location.href = document.location.origin;
+                    document.location.href = document.location.origin + "/chat";
                 }, 1500);
             }
         });
