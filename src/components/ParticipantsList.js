@@ -11,8 +11,8 @@ function ParticipantsList(props) {
     }
     return (
         <ul>
-            <li className="item"><a href="#"><i className="fa fa-list-alt"></i><span>Участники</span></a></li>
-            {/* <li className="item active"><a href="#"><i className="fa fa-user"></i><span>Команда чата</span><i className="fa fa-times"></i></a></li> */}
+            <li className="item active"><a href="#"><i className="fa fa-list-alt"></i><span>Участники</span></a></li>
+            {/* <li className="item"><a href="#"><i className="fa fa-user"></i><span>Команда чата</span><i className="fa fa-times"></i></a></li> */}
             <ul>
                 {listOfParticipants}
             </ul>

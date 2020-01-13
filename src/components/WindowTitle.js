@@ -10,8 +10,8 @@ function WindowTitle() {
             <div className="title">
                 <span>Чат</span>
             </div>
-            <div className="expand">
-                <i className="fa fa-expand"></i>
+            <div className="exit" title="Выйти из аккаунта">
+                <i className="fa fa-times" onClick={()=>document.location.assign("logout")}></i>
             </div>
         </div>
     );

@@ -112,11 +112,11 @@ app.post("/canIlogin", function (request, response) {
     let rp = resdata.report;
     const d = request.body; // data
 
-    const isRequestCorrect = isStr(d.userName) && isStr(d.password);
+    const isRequestCorrect = isStr(d.userNameOrEmail) && isStr(d.password);
     if (!isRequestCorrect) {
         rp.info = "Неправильно составлен запрос";
-    } else if (d.userName === "") {
-        rp.info = "Вы не ввели никнейм";
+    } else if (d.userNameOrEmail === "") {
+        rp.info = "Вы не ввели никнейм или почту";
     } else if (d.password === "") {
         rp.info = "Вы не ввели пароль";
     }
@@ -124,7 +124,7 @@ app.post("/canIlogin", function (request, response) {
         return response.json(resdata);
     }
 
-    users.findOne({$or: [{ userName: d.userName }, { email: d.email }]})
+    users.findOne({$or: [{ userName: d.userNameOrEmail }, { email: d.userNameOrEmail }]})
     .then((result) => {
         if (result === null) {
             return "Пользователь с указанными логином или почтой не найден";
@@ -145,6 +145,7 @@ app.post("/canIlogin", function (request, response) {
     });
 });
 app.post("/canIregister", function (request, response) {
+    // TODO: Добавить проверку почты через присылание письма
     let resdata = createEmptyResponseData();
     let rp = resdata.report;
     const d = request.body;
@@ -212,11 +213,13 @@ app.post("/canIregister", function (request, response) {
         response.json(resdata);
     });
 });
+// TODO: Добавить оповещение всех онлайновых, кто в одном чате о присоединении новичка
 // app.post("/canIjoinTheRoom", function (request, response) {
 //     let resdata = createEmptyResponseData();
 //     let rp = resdata.report;
 //     const d = request.body;
 // });
+// TODO: Добавить восстановление аккаунта по почте
 app.post("/loadChatHistory", function (request, response) {
     let resdata = createEmptyResponseData();
     let rp = resdata.report;
@@ -351,7 +354,6 @@ wss.on('connection', (ws, request) => {
             if (!setOfActiveUserIDs[_id]) {
                 setOfActiveUserIDs[_id] = 1;
                 wss.clients.forEach(client => {
-                    // TODO: Отправка только тем, кто имеет общие с подключившимся человеком комнаты
                     if (hasIntersections(client.authInfo.rooms, ws.authInfo.rooms)) {
                         client.send(JSON.stringify({handlerType: "isOnline", _id}));
                     }
@@ -369,7 +371,6 @@ wss.on('connection', (ws, request) => {
         if (setOfActiveUserIDs[_id] === 1) {
             delete setOfActiveUserIDs[_id];
             wss.clients.forEach(client => {
-                // TODO: Отправка только тем, кто имеет общие с подключившимся человеком комнаты
                 if (hasIntersections(client.authInfo.rooms, ws.authInfo.rooms)) {
                     client.send(JSON.stringify({handlerType: "isOffline", _id}));
                 }
