@@ -7,15 +7,23 @@ class MyAccountInfo extends Component {
         imgLink: ""
     }
     componentDidMount = () => {
-        fetch('https://randomuser.me/api/?results=1&inc=picture&noinfo')
-            .then(function (response) {
-                return response.json()
-            }).then((data) => {
-                this.setState({
-                    imgLink: data.results[0].picture.large,
-                    imgIsLoading: false
-                })
-            });
+        const avatarLink = getCookie("avatarLink");
+        if (avatarLink) {
+            this.setState({
+                imgLink: avatarLink,
+                imgIsLoading: false
+            })
+        } else {
+            fetch('https://randomuser.me/api/?results=1&inc=picture&noinfo')
+                .then(function (response) {
+                    return response.json()
+                }).then((data) => {
+                    this.setState({
+                        imgLink: data.results[0].picture.large,
+                        imgIsLoading: false
+                    })
+                });
+        }
     };
     render() {
         const userName = getCookie("userName");

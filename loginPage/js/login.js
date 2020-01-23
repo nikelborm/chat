@@ -5,7 +5,7 @@ function getElById(id) {
 window.onload = function () {
     getElById("button").onclick = function () {
         const data = {
-            userNameOrEmail: getElById("userName").value,
+            userNameOrEmail: getElById("userNameOrEmail").value,
             password: getElById("password").value
         };
         fetch(document.location.origin + '/canIlogin', {

@@ -7,7 +7,7 @@ window.onload = function () {
         const data = {
             userName: getElById("userName").value,
             password: getElById("password").value,
-            repeatPassword: getElById("repeatPassword").value,
+            confirmPassword: getElById("confirmPassword").value,
             email: getElById("email").value,
             fullName: getElById("fullName").value
         };

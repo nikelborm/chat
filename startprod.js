@@ -37,10 +37,10 @@ function createEmptyResponseData() {
         reply: {}
     }
 }
-function fillCookies(response, userName, fullName, statusText) {
-    response.cookie('userName', userName);
-    response.cookie('fullName', fullName);
-    response.cookie('statusText', statusText);
+function fillCookies(response, dataObj, params) {
+    for (const param of params) {
+        response.cookie(param, dataObj[param]);
+    }
 }
 // console.log(Object.getOwnPropertyNames(users.__proto__))
 const port = process.env.PORT || 3000;
@@ -133,7 +133,7 @@ app.post("/canIlogin", function (request, response) {
         } else {
             rp.isError = false;
             request.session.authInfo = resdata.reply = result;
-            fillCookies(response, result.userName, result.fullName, result.statusText );
+            fillCookies(response, result, ["userName", "fullName", "statusText", "avatarLink"] );
             return "Успешная авторизация";
         }
     }).catch((err) => {
@@ -150,7 +150,7 @@ app.post("/canIregister", function (request, response) {
     let rp = resdata.report;
     const d = request.body;
 
-    const isRequestCorrect = isStr(d.userName) && isStr(d.password) && isStr(d.repeatPassword) && isStr(d.fullName) && isStr(d.email);
+    const isRequestCorrect = isStr(d.userName) && isStr(d.password) && isStr(d.confirmPassword) && isStr(d.fullName) && isStr(d.email);
     if (!isRequestCorrect) {
         rp.info = "Неправильно составлен запрос";
     } else if (d.userName === "") {
@@ -165,7 +165,7 @@ app.post("/canIregister", function (request, response) {
         rp.info = "Длина пароля должна быть от 8 символов";
     } else if (d.password.length > 40) {
         rp.info = "Длина пароля должна быть до 40 символов";
-    } else if (d.repeatPassword !== d.password) {
+    } else if (d.confirmPassword !== d.password) {
         rp.info = "Пароли не совпадают";
     }
     if (rp.info) {
@@ -193,6 +193,7 @@ app.post("/canIregister", function (request, response) {
                 fullName: d.fullName,
                 regDate: new Date(Date.now()),
                 statusText: "Тут был статус",
+                avatarLink: "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif", // Это временно
                 rooms: ["global"]
             };
             rp.isError = false;
@@ -202,7 +203,7 @@ app.post("/canIregister", function (request, response) {
         if (!rp.isError) {
             const data = result.ops[0];
             request.session.authInfo = resdata.reply = data;
-            fillCookies(response, data.userName, data.fullName, data.statusText );
+            fillCookies(response, data, ["userName", "fullName", "statusText", "avatarLink"]);
             rp.info = "Регистрация успешна";
         }
     }).catch((err) => {
