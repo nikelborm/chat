@@ -9,7 +9,7 @@ class ChatArea extends Component {
         e.preventDefault();
         const data = {
             room: "global",
-            message: this.inputArea.current.value
+            text: this.inputArea.current.value
         };
         fetch(document.location.origin + '/sendMsgInChat', {
             method: 'post',

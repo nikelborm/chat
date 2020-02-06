@@ -10,17 +10,17 @@ const cookieParser = require('cookie-parser');
 const redisStorage = require('connect-redis')(session);
 const redis = require('redis');
 const http = require('http');
-const WebSocket = require('ws')
+const WebSocket = require('ws');
 function isStr(value) {
-    return typeof value === "string"
+    return typeof value === "string";
 }
 function hasIntersections(setA, setB) {
-    for (var elem of setB) {
-        if (setA.has(elem)) return true
+    for (const elem of setB) {
+        if (setA.has(elem)) return true;
     }
 }
 function logout(request, response) {
-    request.session.destroy((err) => {
+    request.session.destroy(err => {
         if (err) return console.log(err);
         response.clearCookie("userName");
         response.clearCookie("fullName");
@@ -35,9 +35,9 @@ function createEmptyResponseData() {
             info: ""
         },
         reply: {}
-    }
+    };
 }
-function fillCookies(response, dataObj, params) {
+function fillCookies(response, dataObj, ...params) {
     for (const param of params) {
         response.cookie(param, dataObj[param]);
     }
@@ -51,14 +51,14 @@ const secretKey = process.env.SECRET || "wHaTeVeR123";
 // const mailPassword = process.env.GMAIL_PASS || "wHaTeVeR123";
 
 const app = express();
-const storage = new redisStorage({
+const store = new redisStorage({
     client: redis.createClient(redisLink)
 });
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(bodyParser.text());
 app.use(session({
-    store: storage,
+    store,
     secret: secretKey,
     resave: false,
     rolling: true,
@@ -67,16 +67,13 @@ app.use(session({
 }));
 app.use(cookieParser(secretKey));
 app.use(favicon(__dirname + '/build/favicon.ico'));
-// the __dirname is the current directory from where the script is running
-// app.use(express.static(__dirname));
-// Эти две страницы выкидываются в первую очередь (они статичны)
-app.use("/register", express.static(path.join(__dirname, 'registerPage')));
-app.use("/restore", express.static(path.join(__dirname, 'restoreAccountPage')));
+
 // Если человек сам зашёл на логин или его редиректнуло, идёт проверка авторизован ли он, если да то его редиректит на / то есть чат, если нет, то ему выкидывается страница логина
 // Вместе с страницей логина делаются доступными все файлы в нужной директории
 // Если человек сам зашёл на чат или его редиректнуло, так же идёт проверка авторизован ли он, если да то он остаётся тут, иначе его редиректит на логин
 // Становятся доступными все файлы в директории чата
-// TODO: Сделать проверку есть ли пользователь (хранящийся в сессии) в базе (на случай если была авторизация на нескольких устройствах, а акк удалён из базы) в этих обработчиках:
+
+// TODO: Сделать проверку есть ли пользователь (хранящийся в сессии) в базе (на случай если была авторизация на нескольких устройствах, а акк удалён из базы) в этих пунктах:
 //   /
 //   /chat
 //   /loadChatHistory
@@ -86,10 +83,10 @@ app.get("/", function (request, response) {
     if (request.session.authInfo) {
         response.redirect('/chat'); // на чат
     } else {
-        response.sendFile(path.join(__dirname, 'loginPage', 'index.html'));
+        response.sendFile(path.join(__dirname, 'authorize', 'index.html'));
     }
 });
-app.use("/", express.static(path.join(__dirname, 'loginPage')));
+app.use("/", express.static(path.join(__dirname, 'authorize')));
 app.get("/chat", function (request, response) {
     if (request.session.authInfo) {
         response.sendFile(path.join(__dirname, 'build', 'index.html'));
@@ -110,37 +107,40 @@ app.get("/logout", logout);
 app.post("/canIlogin", function (request, response) {
     let resdata = createEmptyResponseData();
     let rp = resdata.report;
-    const d = request.body; // data
+    const { userNameOrEmail, password } = request.body;
 
-    const isRequestCorrect = isStr(d.userNameOrEmail) && isStr(d.password);
+    let errorField = "";
+    const isRequestCorrect = isStr(userNameOrEmail) && isStr(password);
     if (!isRequestCorrect) {
         rp.info = "Неправильно составлен запрос";
-    } else if (d.userNameOrEmail === "") {
+    } else if (!userNameOrEmail) {
         rp.info = "Вы не ввели никнейм или почту";
-    } else if (d.password === "") {
+        errorField = "userNameOrEmail";
+    } else if (!password) {
         rp.info = "Вы не ввели пароль";
+        errorField = "passwordLogin";
     }
     if (rp.info) {
+        resdata.reply.errorField = errorField;
         return response.json(resdata);
     }
 
-    users.findOne({$or: [{ userName: d.userNameOrEmail }, { email: d.userNameOrEmail }]})
-    .then((result) => {
-        if (result === null) {
-            return "Пользователь с указанными логином или почтой не найден";
-        } else if (result.password !== sha256(d.password)){
-            return "Неверный пароль";
-        } else {
-            rp.isError = false;
-            request.session.authInfo = resdata.reply = result;
-            fillCookies(response, result, ["userName", "fullName", "statusText", "avatarLink"] );
-            return "Успешная авторизация";
+    users.findOne({$or: [{ userName: userNameOrEmail }, { email: userNameOrEmail }]})
+    .then(result => {
+        if (!result) {
+            resdata.reply.errorField = "userNameOrEmail";
+            throw new Error ("Пользователь с указанными логином или почтой не найден");
+        } else if (result.password !== sha256(password)) {
+            resdata.reply.errorField = "passwordLogin";
+            throw new Error ("Неверный пароль");
         }
-    }).catch((err) => {
-        console.log(err);
-        return err;
-    }).then((result) => {
-        rp.info = result;
+        request.session.authInfo = resdata.reply = result;
+        fillCookies(response, result, "userName", "fullName", "statusText", "avatarLink");
+        rp.isError = false;
+        rp.info = "Успешная авторизация";
+    }).catch(err => {
+        rp.info = err.message;
+    }).finally(() => {
         response.json(resdata);
     });
 });
@@ -148,68 +148,69 @@ app.post("/canIregister", function (request, response) {
     // TODO: Добавить проверку почты через присылание письма
     let resdata = createEmptyResponseData();
     let rp = resdata.report;
-    const d = request.body;
+    const {userName, password, confirmPassword, fullName, email} = request.body;
 
-    const isRequestCorrect = isStr(d.userName) && isStr(d.password) && isStr(d.confirmPassword) && isStr(d.fullName) && isStr(d.email);
+    let errorField = "";
+    const isRequestCorrect = isStr(userName) && isStr(password) && isStr(confirmPassword) && isStr(fullName) && isStr(email);
     if (!isRequestCorrect) {
         rp.info = "Неправильно составлен запрос";
-    } else if (d.userName === "") {
+    } else if (!userName) {
         rp.info = "Вы не ввели никнейм";
-    } else if (d.email === "") {
+        errorField = "userName";
+    } else if (!email) {
         rp.info = "Вы не ввели почту";
-    } else if (d.password === "") {
+        errorField = "email";
+    } else if (!password) {
         rp.info = "Вы не ввели пароль";
-    } else if (d.fullName === "") {
+        errorField = "passwordRegister";
+    } else if (!fullName) {
         rp.info = "Вы не ввели ваше имя";
-    } else if (d.password.length < 8) {
+        errorField = "fullName";
+    } else if (password.length < 8) {
         rp.info = "Длина пароля должна быть от 8 символов";
-    } else if (d.password.length > 40) {
+        errorField = "passwordRegister";
+    } else if (password.length > 40) {
         rp.info = "Длина пароля должна быть до 40 символов";
-    } else if (d.confirmPassword !== d.password) {
+        errorField = "passwordRegister";
+    } else if (confirmPassword !== password) {
         rp.info = "Пароли не совпадают";
+        errorField = "confirmPassword";
     }
     if (rp.info) {
+        resdata.reply.errorField = errorField;
         return response.json(resdata);
     }
 
-    users.findOne({ $or: [{ userName: d.userName }, { email: d.email }] })
-    .then((result) => {
-        if (result === null) {
-            // Пользователя нет в системе
-            return "";
-        } else if (result.userName === d.userName) {
-            return "Этот никнейм занят. Если вы владелец, попробуйте <a href='/restore' style='color: #32017d;'>восстановить аккаунт</a>.";
-        } else if (result.email === d.email) {
-            return "Эта почта занята. Если вы владелец, попробуйте <a href='/restore' style='color: #32017d;'>восстановить аккаунт</a>.";
-        }
-    }).then((errorText) => {
-        if (errorText) {
-            return rp.info = errorText;
-        } else {
+    users.findOne({ $or: [{ userName }, { email }] })
+    .then(result => {
+        if (!result) { // Не нашёл никаких результатов
             const userProfile = {
-                userName: d.userName,
-                password: sha256(d.password),
-                email: d.email,
-                fullName: d.fullName,
+                userName,
+                password: sha256(password),
+                email,
+                fullName,
                 regDate: new Date(Date.now()),
                 statusText: "Тут был статус",
                 avatarLink: "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif", // Это временно
                 rooms: ["global"]
             };
-            rp.isError = false;
             return users.insertOne(userProfile); // Возвращаем промис
+        } else if (result.userName === userName) {
+            resdata.reply.errorField = "userName";
+            throw new Error ("Этот никнейм занят. Если вы владелец, попробуйте <a href='/restore' style='color: #32017d;'>восстановить аккаунт</a>.");
+        } else if (result.email === email) {
+            resdata.reply.errorField = "email";
+            throw new Error ("Эта почта занята. Если вы владелец, попробуйте <a href='/restore' style='color: #32017d;'>восстановить аккаунт</a>.");
         }
-    }).then((result)=>{
-        if (!rp.isError) {
-            const data = result.ops[0];
-            request.session.authInfo = resdata.reply = data;
-            fillCookies(response, data, ["userName", "fullName", "statusText", "avatarLink"]);
-            rp.info = "Регистрация успешна";
-        }
-    }).catch((err) => {
+    }).then(result => {
+        const data = result.ops[0];
+        request.session.authInfo = resdata.reply = data;
+        fillCookies(response, data, "userName", "fullName", "statusText", "avatarLink");
+        rp.isError = false;
+        rp.info = "Регистрация успешна";
+    }).catch(err => {
         console.log(err);
-        rp.isError = true;
-        rp.info = err;
+        rp.info = err.message;
     }).finally(() => {
         response.json(resdata);
     });
@@ -224,64 +225,71 @@ app.post("/canIregister", function (request, response) {
 app.post("/loadChatHistory", function (request, response) {
     let resdata = createEmptyResponseData();
     let rp = resdata.report;
-    const d = request.body; // data
+    const { room } = request.body;
+    const { authInfo } = request.session;
 
-    const isRequestCorrect = isStr(d.room);
+    const isRequestCorrect = isStr(room);
     if (!isRequestCorrect) {
         rp.info = "Неправильно составлен запрос";
-    } else if (!request.session.authInfo) {
+    } else if (!authInfo) {
         rp.info = "Вы не авторизованы";
-    } else if (!request.session.authInfo.rooms.includes(d.room)) {
+    } else if (!authInfo.rooms.includes(room)) {
         rp.info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
     }
     if (rp.info) {
         return response.json(resdata);
     }
 
-    messages.find({room: d.room}, {projection: {room: 0}}).toArray((err, results) => {
-        if (err) return console.log(err);
+    messages.find({room}, {projection: {room: 0}})
+    .then(results => {
         resdata.reply = results;
         rp.isError = false;
         rp.info = "Данные успешно загружены";
+    }).catch(err => {
+        console.log(err);
+        rp.info = err.message;
+    }).finally(() => {
         response.json(resdata);
     });
 });
 app.post("/sendMsgInChat", function (request, response) {
     let resdata = createEmptyResponseData();
     let rp = resdata.report;
-    const d = request.body; // data
-    const isRequestCorrect = isStr(d.room) && isStr(d.message);
+    const { room, text } = request.body;
+    const { authInfo } = request.session;
+
+    const isRequestCorrect = isStr(room) && isStr(text);
     if (!isRequestCorrect) {
         rp.info = "Неправильно составлен запрос";
-    } else if (!request.session.authInfo) {
+    } else if (!authInfo) {
         rp.info = "Вы не авторизованы";
-    } else if (d.message === "") {
-        rp.info = "Вы отправили пустое сообщение"
-    } else if (!request.session.authInfo.rooms.includes(d.room)) {
+    } else if (!text) {
+        rp.info = "Вы отправили пустое сообщение";
+    } else if (!authInfo.rooms.includes(room)) {
         rp.info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
     }
     if (rp.info) {
         return response.json(resdata);
     }
     const message = {
-        room: d.room,
-        author: request.session.authInfo.userName,
-        text: d.message,
+        room,
+        author: authInfo.userName,
+        text,
         time: new Date(Date.now())
     };
     messages.insertOne(message)
-    .then((result) => {
+    .then(result => {
         rp.info = "Сообщение успешно отправлено";
         rp.isError = false;
         resdata.reply = result.ops[0];
         wss.clients.forEach(client => {
-            if (client.authInfo.rooms.has(d.room)) {
+            if (client.authInfo.rooms.has(room)) {
                 client.send(JSON.stringify({handlerType: "message", message}));
             }
         });
-    }).catch((err) => {
+    }).catch(err => {
         console.log(err);
-        rp.info = err;
+        rp.info = err.message;
     }).finally(() => {
         response.json(resdata);
     });
@@ -289,22 +297,23 @@ app.post("/sendMsgInChat", function (request, response) {
 app.post("/loadListOfUsersInChat", function (request, response) {
     let resdata = createEmptyResponseData();
     let rp = resdata.report;
-    const d = request.body; // data
+    const { room } = request.body;
+    const { authInfo } = request.session;
 
-    const isRequestCorrect = isStr(d.room);
+    const isRequestCorrect = isStr(room);
     if (!isRequestCorrect) {
         rp.info = "Неправильно составлен запрос";
-    } else if (!request.session.authInfo) {
+    } else if (!authInfo) {
         rp.info = "Вы не авторизованы";
-    } else if (!request.session.authInfo.rooms.includes(d.room)) {
+    } else if (!authInfo.rooms.includes(room)) {
         rp.info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
     }
     if (rp.info) {
         return response.json(resdata);
     }
     let results = {};
-    const cursor = users.find({rooms: d.room}, {projection: { userName:1, fullName:1 }});
-    cursor.forEach(
+    users.find({rooms: room}, {projection: { userName:1, fullName:1 }})
+    .forEach(
         (doc) => {
             const id = doc._id.toString();
             const user = {
@@ -344,7 +353,7 @@ wss.on('connection', (ws, request) => {
     ws.isAlive = true;
     const cookies = cookie.parse(request.headers.cookie);
     const sid = cookieParser.signedCookie(cookies["connect.sid"], secretKey);
-    storage.get(sid, (err, ss) => {
+    store.get(sid, (err, ss) => {
         if (err) console.log(err);
         if (!ss || !ss.authInfo || err) {
             ws.send("Вы не авторизованы!");
@@ -360,7 +369,7 @@ wss.on('connection', (ws, request) => {
                     }
                 });
             } else {
-                setOfActiveUserIDs[_id]++
+                setOfActiveUserIDs[_id]++;
             }
         }
     });
@@ -377,7 +386,7 @@ wss.on('connection', (ws, request) => {
                 }
             });
         } else {
-            setOfActiveUserIDs[_id]--
+            setOfActiveUserIDs[_id]--;
         }
     });
     ws.on('message', (message) => {
@@ -404,7 +413,7 @@ mongoClient.connect(function (err, client) {
     users = client.db().collection("users");
     messages = client.db().collection("messages");
     server.listen(port, function(){
-        console.log("Сервер слушает")
+        console.log("Сервер слушает");
     });
 });
 process.on("SIGINT", () => {
