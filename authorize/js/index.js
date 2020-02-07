@@ -55,7 +55,7 @@ id("form-signin").onsubmit = function (event) {
                 content: info
             });
         } else {
-            id("profile-photo").style.backgroundImage = `url(${avatarLink})` ;
+            avatarLink && (id("profile-photo").style.backgroundImage = `url(${avatarLink})`) ;
             id("welcome").textContent = `Welcome, ${fullName}` ;
             id("btn-animate").classList.add("btn-animate-grow");
             id("welcome").classList.add("welcome-left");

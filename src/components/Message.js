@@ -1,9 +1,7 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import React from 'react';
-import getCookie from './getCookie';
 function Message(props) {
-    const { author, text, time } = props.data;
-    const myName = getCookie("userName");
+    const { author, text, time, myName } = props.data;
     const correctTime = new Intl.DateTimeFormat("ru",{month:"long",day:"numeric",hour:"numeric",minute:"numeric",timeZone:"Europe/Moscow"}).format(Date.parse(time));
     let last = 0;
     let results = [];

@@ -39,7 +39,7 @@ function createEmptyResponseData() {
 }
 function fillCookies(response, dataObj, ...params) {
     for (const param of params) {
-        response.cookie(param, dataObj[param]);
+        dataObj[param] !== undefined && response.cookie(param, dataObj[param]);
     }
 }
 // console.log(Object.getOwnPropertyNames(users.__proto__))
