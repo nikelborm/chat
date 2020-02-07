@@ -2,6 +2,9 @@
 import React, { Component } from 'react';
 import getCookie from './getCookie';
 class MyAccountInfo extends Component {
+    shouldComponentUpdate() {
+        return false;
+    }
     render() {
         const userName = getCookie("userName");
         const fullName = getCookie("fullName");
