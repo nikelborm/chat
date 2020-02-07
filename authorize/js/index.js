@@ -8,7 +8,12 @@ function changeActiveCard(activeCardId, inActiveCardId) {
     id(inActiveCardId).classList.remove("active");
     id(inActiveCardId).classList.add("inactive");
 }
-tippy.setDefaultProps({});
+tippy.setDefaultProps({
+    ignoreAttributes: true,
+    placement : "bottom",
+    showOnCreate : true,
+    trigger : "manual"
+});
 
 id("signin").onclick = function () {
     changeActiveCard("signin", "signup");

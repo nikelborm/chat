@@ -148,7 +148,7 @@ app.post("/canIregister", function (request, response) {
     // TODO: Добавить проверку почты через присылание письма
     let resdata = createEmptyResponseData();
     let rp = resdata.report;
-    const {userName, password, confirmPassword, fullName, email} = request.body;
+    const { userName, password, confirmPassword, fullName, email } = request.body;
 
     let errorField = "";
     const isRequestCorrect = isStr(userName) && isStr(password) && isStr(confirmPassword) && isStr(fullName) && isStr(email);
@@ -240,15 +240,15 @@ app.post("/loadChatHistory", function (request, response) {
         return response.json(resdata);
     }
 
-    messages.find({room}, {projection: {room: 0}})
-    .then(results => {
-        resdata.reply = results;
-        rp.isError = false;
-        rp.info = "Данные успешно загружены";
-    }).catch(err => {
-        console.log(err);
-        rp.info = err.message;
-    }).finally(() => {
+    messages.find({room}, {projection: {room: 0}}).toArray((err, results) => {
+        if (err) {
+            rp.info = err.message;
+            console.log(err);
+        } else {
+            resdata.reply = results;
+            rp.isError = false;
+            rp.info = "Данные успешно загружены";
+        }
         response.json(resdata);
     });
 });
