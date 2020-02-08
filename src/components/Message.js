@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import React from 'react';
 function Message(props) {
-    const { author, text, time, myName } = props.data;
+    const { author, text, time } = props.data;
     const correctTime = new Intl.DateTimeFormat("ru",{month:"long",day:"numeric",hour:"numeric",minute:"numeric",timeZone:"Europe/Moscow"}).format(Date.parse(time));
     let last = 0;
     let results = [];
@@ -16,7 +16,7 @@ function Message(props) {
     }
     results.push(text.slice(last));
     return (
-        <li className={(author === myName) ? 'me' : ''}>
+        <li className={(author === props.myName) ? 'me' : ''}>
             <div className="name">
                 <span className="">
                     {author}
