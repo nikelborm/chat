@@ -50,20 +50,35 @@ class WindowArea extends Component {
                 console.log("Отчёт:")
                 console.log(event)
                 console.log(data)
-                if (data.handlerType === "message") {
-                    this.setState({
-                        msgList: this.state.msgList.concat(data.message)
-                    });
-                } else if (data.handlerType === "isOnline") {
-                    this.setState((prevState) => {
-                        prevState.usersInGlobalRoom[data._id].onlineStatus = "online";
-                        return prevState;
-                    });
-                } else if (data.handlerType === "isOffline") {
-                    this.setState((prevState) => {
-                        prevState.usersInGlobalRoom[data._id].onlineStatus = "offline";
-                        return prevState;
-                    });
+                switch (data.handlerType) {
+                    case "message":
+                        this.setState({
+                            msgList: this.state.msgList.concat(data.message)
+                        });
+                        break
+                    case "isOnline":
+                    case "isOffline":
+                        if (this.state.usersInGlobalRoom[data._id]) {
+                            this.setState((prevState) => {
+                                const status = data.handlerType === "isOnline" ? "online" : "offline";
+                                prevState.usersInGlobalRoom[data._id].onlineStatus = status;
+                                return prevState;
+                            });
+                        } else {
+                            console.log("Новый пользователь, которого мы не знаем");
+                        }
+                        break
+                    case "newPersonInChat":
+                        if (!this.state.usersInGlobalRoom[data.id]) {
+                            this.setState((prevState) => {
+                                prevState.usersInGlobalRoom[data.id] = data.user;
+                                return prevState;
+                            });
+                        }
+                        break
+                    default:
+                        console.log("Неизвестный обработчик");
+                        break
                 }
             };
             socket.onclose = function (event) {

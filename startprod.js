@@ -11,6 +11,7 @@ const redisStorage = require('connect-redis')(session);
 const redis = require('redis');
 const http = require('http');
 const WebSocket = require('ws');
+
 function isStr(value) {
     return typeof value === "string";
 }
@@ -28,6 +29,19 @@ function logout(request, response) {
         response.redirect('/');
     });
 }
+function notifyAboutNewPersonInChat(authInfo) {
+    const id = authInfo._id.toString();
+    const user = {
+        userName: authInfo.userName,
+        fullName: authInfo.fullName,
+        onlineStatus: setOfActiveUserIDs[id] ? "online" : "offline"
+    };
+    wss.clients.forEach(client => {
+        if (hasIntersections(client.authInfo.rooms, authInfo.rooms)) {
+            client.send(JSON.stringify({handlerType: "newPersonInChat", id, user}));
+        }
+    });
+}
 function createEmptyResponseData() {
     return {
         report: {
@@ -39,7 +53,9 @@ function createEmptyResponseData() {
 }
 function fillCookies(response, dataObj, ...params) {
     for (const param of params) {
-        dataObj[param] !== undefined && response.cookie(param, dataObj[param]);
+        if(dataObj[param] !== undefined) {
+            response.cookie(param, dataObj[param])
+        };
     }
 }
 // console.log(Object.getOwnPropertyNames(users.__proto__))
@@ -206,6 +222,7 @@ app.post("/canIregister", function (request, response) {
         const data = result.ops[0];
         request.session.authInfo = resdata.reply = data;
         fillCookies(response, data, "userName", "fullName", "statusText", "avatarLink");
+        notifyAboutNewPersonInChat(data);
         rp.isError = false;
         rp.info = "Регистрация успешна";
     }).catch(err => {
@@ -220,6 +237,7 @@ app.post("/canIregister", function (request, response) {
 //     let resdata = createEmptyResponseData();
 //     let rp = resdata.report;
 //     const d = request.body;
+//     notifyAboutNewPersonInChat()
 // });
 // TODO: Добавить восстановление аккаунта по почте
 app.post("/loadChatHistory", function (request, response) {
