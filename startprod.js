@@ -44,7 +44,7 @@ function clearCookies(response, ...params) {
 function logout(request, response) {
     request.session.destroy(err => {
         if (err) return console.log(err);
-        clearCookies("userName", "fullName", "statusText", "avatarLink");
+        clearCookies(response, "userName", "fullName", "statusText", "avatarLink");
         response.redirect('/');
     });
 }
