@@ -10,7 +10,7 @@ body {
     display: -ms-grid;
     display: grid;
     place-items: center center;
-    width: 100vw;
+    width: 100%;
     height: 100vh;
     background: linear-gradient(#000a,#000a), url(1.jpg) no-repeat center center fixed;
     background-size: cover;
@@ -145,7 +145,6 @@ li {
     position: relative;
     top: -653px;
     left: 450px;
-    opacity: .0;
     -webkit-transition: all .8s .4s ease;
     transition: all .8s .4s ease;
 }
