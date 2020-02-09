@@ -37,7 +37,7 @@ id("signin").onclick = function () {
     id("form-signup").classList.remove("form-signup-left");
     id("frame").classList.remove("frame-long");
     id("forgot").classList.remove("forgot-left");
-}
+};
 id("signup").onclick = function () {
     changeActiveCard("signup", "signin");
 
@@ -45,7 +45,7 @@ id("signup").onclick = function () {
     id("form-signup").classList.add("form-signup-left");
     id("frame").classList.add("frame-long");
     id("forgot").classList.add("forgot-left");
-}
+};
 id("form-signin").onsubmit = function (event) {
     event.preventDefault();
     const data = {
@@ -59,15 +59,17 @@ id("form-signin").onsubmit = function (event) {
             'Content-Type': 'application/json'
         })
     }).then((response) => {
-        return response.json()
+        return response.json();
     }).then((data) => {
-        console.log(data)
+        console.log(data);
         const { isError, info } = data.report;
         const { fullName, avatarLink, errorField } = data.reply;
         if (isError) {
             setNewTippy(errorField, info);
         } else {
-            avatarLink && (id("profile-photo").style.backgroundImage = `url(${avatarLink})`) ;
+            if(avatarLink) {
+                id("profile-photo").style.backgroundImage = `url(${avatarLink})`;
+            }
             id("welcome").textContent = `Welcome, ${fullName}` ;
             id("btn-animate").classList.add("btn-animate-grow");
             id("welcome").classList.add("welcome-left");
@@ -80,7 +82,7 @@ id("form-signin").onsubmit = function (event) {
             }, 3000);
         }
     });
-}
+};
 
 id("form-signup").onsubmit = function (event) {
     event.preventDefault();
@@ -98,9 +100,9 @@ id("form-signup").onsubmit = function (event) {
             'Content-Type': 'application/json'
         })
     }).then((response) => {
-        return response.json()
+        return response.json();
     }).then((data) => {
-        console.log(data)
+        console.log(data);
         const { isError, info } = data.report;
         const { errorField } = data.reply;
         if (isError) {
@@ -115,4 +117,4 @@ id("form-signup").onsubmit = function (event) {
             }, 3000);
         }
     });
-}
+};
