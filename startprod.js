@@ -213,10 +213,10 @@ app.post("/canIregister", function (request, response) {
             return users.insertOne(userProfile); // Возвращаем промис
         } else if (result.userName === userName) {
             resdata.reply.errorField = "userName";
-            throw new Error ("Этот никнейм занят. Если вы владелец, попробуйте <a href='/restore' style='color: #32017d;'>восстановить аккаунт</a>.");
+            throw new Error ("Этот никнейм занят. Если вы владелец, попробуйте <a href='/restore' style='color: #FFFFFF;'>восстановить аккаунт</a>.");
         } else if (result.email === email) {
             resdata.reply.errorField = "email";
-            throw new Error ("Эта почта занята. Если вы владелец, попробуйте <a href='/restore' style='color: #32017d;'>восстановить аккаунт</a>.");
+            throw new Error ("Эта почта занята. Если вы владелец, попробуйте <a href='/restore' style='color: #FFFFFF;'>восстановить аккаунт</a>.");
         }
     }).then(result => {
         const data = result.ops[0];
@@ -226,7 +226,6 @@ app.post("/canIregister", function (request, response) {
         rp.isError = false;
         rp.info = "Регистрация успешна";
     }).catch(err => {
-        console.log(err);
         rp.info = err.message;
     }).finally(() => {
         response.json(resdata);

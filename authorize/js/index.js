@@ -8,11 +8,26 @@ function changeActiveCard(activeCardId, inActiveCardId) {
     id(inActiveCardId).classList.remove("active");
     id(inActiveCardId).classList.add("inactive");
 }
+function setNewTippy(field, text) {
+    const instance = id(field)._tippy;
+    if(!instance) {
+        tippy(id(field), {
+            content: text
+        });
+    } else {
+        instance.setContent(text);
+        instance.show();
+    }
+}
 tippy.setDefaultProps({
     ignoreAttributes: true,
     placement : "bottom",
     showOnCreate : true,
-    trigger : "manual"
+    trigger : "manual",
+    theme: "error"
+});
+tippy([id("userName"), id("email")], {
+    interactive: true
 });
 
 id("signin").onclick = function () {
@@ -50,10 +65,7 @@ id("form-signin").onsubmit = function (event) {
         const { isError, info } = data.report;
         const { fullName, avatarLink, errorField } = data.reply;
         if (isError) {
-            // TODO: Сделать нормальную всплывающую подсказку
-            tippy(id(errorField), {
-                content: info
-            });
+            setNewTippy(errorField, info);
         } else {
             avatarLink && (id("profile-photo").style.backgroundImage = `url(${avatarLink})`) ;
             id("welcome").textContent = `Welcome, ${fullName}` ;
@@ -92,10 +104,7 @@ id("form-signup").onsubmit = function (event) {
         const { isError, info } = data.report;
         const { errorField } = data.reply;
         if (isError) {
-            // TODO: Сделать нормальную всплывающую подсказку
-            tippy(id(errorField), {
-                content: info
-            });
+            setNewTippy(errorField, info);
         } else {
             id("nav").classList.add("nav-up");
             id("form-signup").classList.add("form-signup-down");
