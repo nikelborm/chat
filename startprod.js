@@ -20,28 +20,6 @@ function hasIntersections(setA, setB) {
         if (setA.has(elem)) return true;
     }
 }
-function logout(request, response) {
-    request.session.destroy(err => {
-        if (err) return console.log(err);
-        response.clearCookie("userName");
-        response.clearCookie("fullName");
-        response.clearCookie("statusText");
-        response.redirect('/');
-    });
-}
-function notifyAboutNewPersonInChat(authInfo) {
-    const id = authInfo._id.toString();
-    const user = {
-        userName: authInfo.userName,
-        fullName: authInfo.fullName,
-        onlineStatus: setOfActiveUserIDs[id] ? "online" : "offline"
-    };
-    WSServer.clients.forEach(client => {
-        if (hasIntersections(client.authInfo.rooms, authInfo.rooms)) {
-            client.send(JSON.stringify({handlerType: "newPersonInChat", id, user}));
-        }
-    });
-}
 function createEmptyResponseData() {
     return {
         report: {
@@ -57,6 +35,31 @@ function fillCookies(response, dataObj, ...params) {
             response.cookie(param, dataObj[param]);
         }
     }
+}
+function clearCookies(response, ...params) {
+    for (const param of params) {
+        response.clearCookie(param);
+    }
+}
+function logout(request, response) {
+    request.session.destroy(err => {
+        if (err) return console.log(err);
+        clearCookies("userName", "fullName", "statusText", "avatarLink");
+        response.redirect('/');
+    });
+}
+function notifyAboutNewPersonInChat(authInfo) {
+    const id = authInfo._id.toString();
+    const user = {
+        userName: authInfo.userName,
+        fullName: authInfo.fullName,
+        onlineStatus: setOfActiveUserIDs[id] ? "online" : "offline"
+    };
+    WSServer.clients.forEach(client => {
+        if (hasIntersections(client.authInfo.rooms, authInfo.rooms)) {
+            client.send(JSON.stringify({handlerType: "newPersonInChat", id, user}));
+        }
+    });
 }
 
 const port = process.env.PORT || 3000;
