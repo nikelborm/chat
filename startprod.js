@@ -10,7 +10,7 @@ const cookieParser = require('cookie-parser');
 const redisStorage = require('connect-redis')(session);
 const redis = require('redis');
 const http = require('http');
-const WebSocket = require('ws');
+const WebSocket = require('ws'); // jshint ignore:line
 
 function isStr(value) {
     return typeof value === "string";
@@ -36,7 +36,7 @@ function notifyAboutNewPersonInChat(authInfo) {
         fullName: authInfo.fullName,
         onlineStatus: setOfActiveUserIDs[id] ? "online" : "offline"
     };
-    wss.clients.forEach(client => {
+    WSServer.clients.forEach(client => {
         if (hasIntersections(client.authInfo.rooms, authInfo.rooms)) {
             client.send(JSON.stringify({handlerType: "newPersonInChat", id, user}));
         }
@@ -58,7 +58,7 @@ function fillCookies(response, dataObj, ...params) {
         }
     }
 }
-// console.log(Object.getOwnPropertyNames(users.__proto__))
+
 const port = process.env.PORT || 3000;
 const mongoLink = process.env.MONGODB_URI || "mongodb://myUserAdmin:0000@localhost:27017/admin";
 const redisLink = process.env.REDIS_URL || "redis://admin:foobared@127.0.0.1:6379";
@@ -97,7 +97,7 @@ app.use(favicon(__dirname + '/build/favicon.ico'));
 
 app.get("/", function (request, response) {
     if (request.session.authInfo) {
-        response.redirect('/chat'); // на чат
+        response.redirect('/chat');
     } else {
         response.sendFile(path.join(__dirname, 'authorize', 'index.html'));
     }
@@ -299,7 +299,7 @@ app.post("/sendMsgInChat", function (request, response) {
         rp.info = "Сообщение успешно отправлено";
         rp.isError = false;
         resdata.reply = result.ops[0];
-        wss.clients.forEach(client => {
+        WSServer.clients.forEach(client => {
             if (client.authInfo.rooms.has(room)) {
                 client.send(JSON.stringify({handlerType: "message", message}));
             }
@@ -363,25 +363,25 @@ let users;
 let messages;
 let setOfActiveUserIDs = {};
 const server = http.createServer(app);
-const wss = new WebSocket.Server({
+const WSServer = new WebSocket.Server({
     server
 });
-wss.on('connection', (ws, request) => {
-    ws.isAlive = true;
+WSServer.on('connection', (connect, request) => {
+    connect.isAlive = true;
     const cookies = cookie.parse(request.headers.cookie);
     const sid = cookieParser.signedCookie(cookies["connect.sid"], secretKey);
-    store.get(sid, (err, ss) => {
+    store.get(sid, (err, session) => {
         if (err) console.log(err);
-        if (!ss || !ss.authInfo || err) {
-            ws.send("Вы не авторизованы!");
-            ws.terminate();
+        if (!session || !session.authInfo || err) {
+            connect.send("Вы не авторизованы!");
+            connect.terminate();
         } else {
-            const { _id } = ws.authInfo = ss.authInfo;
-            ws.authInfo.rooms = new Set(ss.authInfo.rooms);
+            const { _id } = connect.authInfo = session.authInfo;
+            connect.authInfo.rooms = new Set(session.authInfo.rooms);
             if (!setOfActiveUserIDs[_id]) {
                 setOfActiveUserIDs[_id] = 1;
-                wss.clients.forEach(client => {
-                    if (hasIntersections(client.authInfo.rooms, ws.authInfo.rooms)) {
+                WSServer.clients.forEach(client => {
+                    if (hasIntersections(client.authInfo.rooms, connect.authInfo.rooms)) {
                         client.send(JSON.stringify({handlerType: "isOnline", _id}));
                     }
                 });
@@ -390,15 +390,15 @@ wss.on('connection', (ws, request) => {
             }
         }
     });
-    ws.on('pong', () => {
-        ws.isAlive = true;
+    connect.on('pong', () => {
+        connect.isAlive = true;
     });
-    ws.on('close',() => {
-        const { _id } = ws.authInfo;
+    connect.on('close',() => {
+        const { _id } = connect.authInfo;
         if (setOfActiveUserIDs[_id] === 1) {
             delete setOfActiveUserIDs[_id];
-            wss.clients.forEach(client => {
-                if (hasIntersections(client.authInfo.rooms, ws.authInfo.rooms)) {
+            WSServer.clients.forEach(client => {
+                if (hasIntersections(client.authInfo.rooms, connect.authInfo.rooms)) {
                     client.send(JSON.stringify({handlerType: "isOffline", _id}));
                 }
             });
@@ -406,22 +406,21 @@ wss.on('connection', (ws, request) => {
             setOfActiveUserIDs[_id]--;
         }
     });
-    ws.on('message', (message) => {
+    connect.on('message', (message) => {
         console.log('received: %s', message);
     });
-    // ws.send('Hi there, I am a WebSocket server');
 });
 setInterval(() => {
     // Проверка на то, оставлять ли соединение активным
-    wss.clients.forEach((ws) => {
+    WSServer.clients.forEach(client => {
         // Если соединение мертво, завершить
-        if (!ws.isAlive) {
-            setOfActiveUserIDs.delete(ws.authInfo._id);
-            return ws.terminate();
+        if (!client.isAlive) {
+            setOfActiveUserIDs.delete(client.authInfo._id);
+            return client.terminate();
         }
         // обьявить все соединения мертвыми, а тех кто откликнется на ping, сделать живыми
-        ws.isAlive = false;
-        ws.ping(null, false, true);
+        client.isAlive = false;
+        client.ping(null, false, true);
     });
 }, 10000);
 mongoClient.connect(function (err, client) {
@@ -435,7 +434,7 @@ mongoClient.connect(function (err, client) {
 });
 process.on("SIGINT", () => {
     // На самом деле я не думаю, что это всерьёз будет работать
-    wss.clients.forEach((ws) => ws.close(1000, "Сервер выключен или перезагружается."));
+    WSServer.clients.forEach((connect) => connect.close(1000, "Сервер выключен или перезагружается."));
     dbClient.close();
     process.exit();
 });

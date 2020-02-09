@@ -1,0 +1,14 @@
+{
+    "smarttabs": "true",
+    "esversion": 6,
+    "undef": true,
+    "unused": true,
+    "node":true,
+    "browser":true,
+    "bitwise": true,
+    "forin": true,
+    "varstmt": true,
+    "globals": {
+        "tippy": true
+    }
+}

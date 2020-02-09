@@ -17,8 +17,7 @@
     "start_development_server": "react-scripts start",
     "build": "react-scripts build",
     "start_production_server": "node startprod.js",
-    "build_and_start_production_server": "react-scripts build && node startprod.js",
-    "jshint_startprod" : "jshint -c .vscode/.jshintrc startprod.js"
+    "build_and_start_production_server": "react-scripts build && node startprod.js"
   },
   "eslintConfig": {
     "extends": "react-app"
