@@ -53,7 +53,7 @@ function notifyAboutNewPersonInChat(authInfo) {
     const user = {
         userName: authInfo.userName,
         fullName: authInfo.fullName,
-        onlineStatus: activeUsersCounter[id] ? "online" : "offline"
+        onlineStatus: setOfActiveUserIDs[id] ? "online" : "offline"
     };
     WSServer.clients.forEach(client => {
         if (hasIntersections(client.authInfo.rooms, authInfo.rooms)) {
@@ -339,7 +339,7 @@ app.post("/loadListOfUsersInChat", function (request, response) {
             const user = {
                 userName: doc.userName,
                 fullName: doc.fullName,
-                onlineStatus: activeUsersCounter[id] ? "online" : "offline"
+                onlineStatus: setOfActiveUserIDs[id] ? "online" : "offline"
             };
             results[id] = user;
         },
@@ -364,7 +364,7 @@ const mongoClient = new mongodb.MongoClient(mongoLink, {
 let dbClient;
 let users;
 let messages;
-let activeUsersCounter = {};
+let setOfActiveUserIDs = {};
 const server = http.createServer(app);
 const WSServer = new WebSocket.Server({
     server
@@ -381,15 +381,15 @@ WSServer.on('connection', (connect, request) => {
         } else {
             const { _id } = connect.authInfo = session.authInfo;
             connect.authInfo.rooms = new Set(session.authInfo.rooms);
-            if (!activeUsersCounter[_id]) {
-                activeUsersCounter[_id] = 1;
+            if (!setOfActiveUserIDs[_id]) {
+                setOfActiveUserIDs[_id] = 1;
                 WSServer.clients.forEach(client => {
                     if (hasIntersections(client.authInfo.rooms, connect.authInfo.rooms)) {
                         client.send(JSON.stringify({handlerType: "isOnline", _id}));
                     }
                 });
             } else {
-                activeUsersCounter[_id]++;
+                setOfActiveUserIDs[_id]++;
             }
         }
     });
@@ -398,15 +398,15 @@ WSServer.on('connection', (connect, request) => {
     });
     connect.on('close',() => {
         const { _id } = connect.authInfo;
-        if (activeUsersCounter[_id] === 1) {
-            delete activeUsersCounter[_id];
+        if (setOfActiveUserIDs[_id] === 1) {
+            delete setOfActiveUserIDs[_id];
             WSServer.clients.forEach(client => {
                 if (hasIntersections(client.authInfo.rooms, connect.authInfo.rooms)) {
                     client.send(JSON.stringify({handlerType: "isOffline", _id}));
                 }
             });
         } else {
-            activeUsersCounter[_id]--;
+            setOfActiveUserIDs[_id]--;
         }
     });
     connect.on('message', (message) => {
@@ -415,10 +415,13 @@ WSServer.on('connection', (connect, request) => {
 });
 setInterval(() => {
     // Проверка на то, оставлять ли соединение активным
+    console.log(setOfActiveUserIDs);
     WSServer.clients.forEach(client => {
         // Если соединение мертво, завершить
         if (!client.isAlive) {
-            delete activeUsersCounter[client.authInfo._id];
+            if (setOfActiveUserIDs.has(client.authInfo._id)){
+                setOfActiveUserIDs.delete(client.authInfo._id);
+            }
             return client.terminate();
         }
         // обьявить все соединения мертвыми, а тех кто откликнется на ping, сделать живыми
