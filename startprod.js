@@ -415,10 +415,13 @@ WSServer.on('connection', (connect, request) => {
 });
 setInterval(() => {
     // Проверка на то, оставлять ли соединение активным
+    console.log(setOfActiveUserIDs);
     WSServer.clients.forEach(client => {
         // Если соединение мертво, завершить
         if (!client.isAlive) {
-            setOfActiveUserIDs.delete(client.authInfo._id);
+            if (setOfActiveUserIDs.has(client.authInfo._id)){
+                setOfActiveUserIDs.delete(client.authInfo._id);
+            }
             return client.terminate();
         }
         // обьявить все соединения мертвыми, а тех кто откликнется на ping, сделать живыми
