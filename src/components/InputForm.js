@@ -15,10 +15,12 @@ class InputForm extends Component {
     }
     sendMsgInChat = (e) => {
         e.preventDefault();
+        this.instanceRef.current.hide();
         const data = {
             room: "global",
             text: this.inputArea.current.value
         };
+        this.inputArea.current.value = "";
         fetch(document.location.origin + '/sendMsgInChat', {
             method: 'post',
             body: JSON.stringify(data),
@@ -32,8 +34,7 @@ class InputForm extends Component {
         });
     };
     chooseEmoji = (emoji) => {
-        console.log(emoji);
-        this.instanceRef.current.hide();
+        this.inputArea.current.value += emoji;
     };
     render() {
         return (
