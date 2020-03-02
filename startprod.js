@@ -398,6 +398,7 @@ WSServer.on('connection', (connect, request) => {
     });
     connect.on('close',() => {
         const { _id } = connect.authInfo;
+        console.log(`onclose ${_id}`);
         if (activeUsersCounter[_id] === 1) {
             delete activeUsersCounter[_id];
             WSServer.clients.forEach(client => {
@@ -418,6 +419,7 @@ setInterval(() => {
     WSServer.clients.forEach(client => {
         // Если соединение мертво, завершить
         if (!client.isAlive) {
+            console.log(`onhardclose ${client.authInfo._id}`);
             delete activeUsersCounter[client.authInfo._id];
             return client.terminate();
         }
