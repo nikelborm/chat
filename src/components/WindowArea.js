@@ -96,10 +96,11 @@ class WindowArea extends Component {
                     // TODO: Добавить нарастающую задержку перед следующим переподключением
                 };
                 window.socket.onerror = function (error) {
+                    window.socket.close();
                     window.isSocketAvailable = false;
                     console.error("[error] Ошибка! Отчёт:");
                     console.log(error);
-                    createOrRespawnWebSocket();
+                    setTimeout(createOrRespawnWebSocket, 1000);
                     // TODO: Добавить нарастающую задержку перед следующим переподключением
                 };
             }
