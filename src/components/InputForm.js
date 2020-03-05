@@ -21,17 +21,7 @@ class InputForm extends Component {
             text: this.inputArea.current.value
         };
         this.inputArea.current.value = "";
-        fetch(document.location.origin + '/sendMsgInChat', {
-            method: 'post',
-            body: JSON.stringify(data),
-            headers: new Headers({
-                'Content-Type': 'application/json'
-            })
-        }).then((response) => {
-            return response.json();
-        }).then((data) => {
-            console.log(data);
-        });
+        window.socket.send(JSON.stringify(data));
     };
     chooseEmoji = (emoji) => {
         this.inputArea.current.value += emoji;

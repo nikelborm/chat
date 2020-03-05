@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import ConversationList from "./ConversationList";
 import ChatArea from "./ChatArea";
 import RightTabs from "./RightTabs";
+
 class WindowArea extends Component {
     constructor(props) {
         super(props);
@@ -35,60 +36,74 @@ class WindowArea extends Component {
                     [pasteSuccessIn]: true
                 });
             }
-        });
+        }); // TODO: Добавить обработку ошибки соединения (можно с TIPPY)
     };
     componentDidUpdate = () => {
         if (this.state.ischatHistoryLoaded && this.state.isUsersListInRoomDownloaded && !this.cometCreated) {
-            const protocol = document.location.protocol[4] === "s" ? "wss://": "ws://"
-            let socket = new WebSocket(protocol + document.location.host);
-            socket.onopen = function (e) {
-                console.log("[open] Соединение установлено");
-            };
-            socket.onmessage = (event) => {
-                console.log("[message] Данные получены с сервера:");
-                const data = JSON.parse(event.data);
-                console.log("Отчёт:")
-                console.log(event)
-                console.log(data)
-                switch (data.handlerType) {
-                    case "message":
-                        this.setState({
-                            msgList: this.state.msgList.concat(data.message)
-                        });
-                        break
-                    case "isOnline":
-                    case "isOffline":
-                        if (this.state.usersInGlobalRoom[data._id]) {
-                            this.setState((prevState) => {
-                                const status = data.handlerType === "isOnline" ? "online" : "offline";
-                                prevState.usersInGlobalRoom[data._id].onlineStatus = status;
-                                return prevState;
+            const createOrRespawnWebSocket = () => {
+                const protocol = document.location.protocol[4] === "s" ? "wss://": "ws://"
+                window.socket = new WebSocket(protocol + document.location.host);
+                window.socket.onopen = function (e) {
+                    window.isSocketAvailable = true;
+                    console.log("[open] Соединение установлено");
+                };
+                window.socket.onmessage = (event) => {
+                    console.log("[message] Данные получены с сервера:");
+                    const data = JSON.parse(event.data);
+                    console.log("Отчёт:")
+                    console.log(event)
+                    console.log(data)
+                    switch (data.handlerType) {
+                        case "logs":
+                            console.log("Пришли ответные логи");
+                            console.log(data.response);
+                            break;
+                        case "message":
+                            this.setState({
+                                msgList: this.state.msgList.concat(data.message)
                             });
-                        } else {
-                            console.log("Новый пользователь, которого мы не знаем");
-                        }
-                        break
-                    case "newPersonInChat":
-                        if (!this.state.usersInGlobalRoom[data.id]) {
-                            this.setState((prevState) => {
-                                prevState.usersInGlobalRoom[data.id] = data.user;
-                                return prevState;
-                            });
-                        }
-                        break
-                    default:
-                        console.log("Неизвестный обработчик");
-                        break
-                }
-            };
-            socket.onclose = function (event) {
-                console.log("[close] Соединение закрыто. Отчёт:");
-                console.log(event);
-            };
-            socket.onerror = function (error) {
-                console.error("[error] Ошибка! Отчёт:");
-                console.log(error);
-            };
+                            break;
+                        case "isOnline":
+                        case "isOffline":
+                            if (this.state.usersInGlobalRoom[data._id]) {
+                                this.setState((prevState) => {
+                                    const status = data.handlerType === "isOnline" ? "online" : "offline";
+                                    prevState.usersInGlobalRoom[data._id].onlineStatus = status;
+                                    return prevState;
+                                });
+                            } else {
+                                console.log("Новый пользователь, которого мы не знаем");
+                            }
+                            break;
+                        case "newPersonInChat":
+                            if (!this.state.usersInGlobalRoom[data.id]) {
+                                this.setState((prevState) => {
+                                    prevState.usersInGlobalRoom[data.id] = data.user;
+                                    return prevState;
+                                });
+                            }
+                            break;
+                        default:
+                            console.log("Неизвестный обработчик");
+                            break;
+                    }
+                };
+                window.socket.onclose = function (event) {
+                    window.isSocketAvailable = false;
+                    console.log("[close] Соединение закрыто. Отчёт:");
+                    console.log(event);
+                    createOrRespawnWebSocket();
+                    // TODO: Добавить нарастающую задержку перед следующим переподключением
+                };
+                window.socket.onerror = function (error) {
+                    window.isSocketAvailable = false;
+                    console.error("[error] Ошибка! Отчёт:");
+                    console.log(error);
+                    createOrRespawnWebSocket();
+                    // TODO: Добавить нарастающую задержку перед следующим переподключением
+                };
+            }
+            createOrRespawnWebSocket();
             this.cometCreated = true;
         }
     };

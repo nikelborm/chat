@@ -272,48 +272,6 @@ app.post("/loadChatHistory", function (request, response) {
         response.json(resdata);
     });
 });
-app.post("/sendMsgInChat", function (request, response) {
-    let resdata = createEmptyResponseData();
-    let rp = resdata.report;
-    const { room, text } = request.body;
-    const { authInfo } = request.session;
-
-    const isRequestCorrect = isStr(room) && isStr(text);
-    if (!isRequestCorrect) {
-        rp.info = "Неправильно составлен запрос";
-    } else if (!authInfo) {
-        rp.info = "Вы не авторизованы";
-    } else if (!text) {
-        rp.info = "Вы отправили пустое сообщение";
-    } else if (!authInfo.rooms.includes(room)) {
-        rp.info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
-    }
-    if (rp.info) {
-        return response.json(resdata);
-    }
-    const message = {
-        room,
-        author: authInfo.userName,
-        text,
-        time: new Date(Date.now())
-    };
-    messages.insertOne(message)
-    .then(result => {
-        rp.info = "Сообщение успешно отправлено";
-        rp.isError = false;
-        resdata.reply = result.ops[0];
-        WSServer.clients.forEach(client => {
-            if (client.authInfo.rooms.has(room)) {
-                client.send(JSON.stringify({handlerType: "message", message}));
-            }
-        });
-    }).catch(err => {
-        console.log(err);
-        rp.info = err.message;
-    }).finally(() => {
-        response.json(resdata);
-    });
-});
 app.post("/loadListOfUsersInChat", function (request, response) {
     let resdata = createEmptyResponseData();
     let rp = resdata.report;
@@ -369,22 +327,24 @@ const server = http.createServer(app);
 const WSServer = new WebSocket.Server({
     server
 });
-WSServer.on('connection', (connect, request) => {
-    connect.isAlive = true;
+WSServer.on('connection', (connection, request) => {
+    connection.isAlive = true;
     const cookies = cookie.parse(request.headers.cookie);
     const sid = cookieParser.signedCookie(cookies["connect.sid"], secretKey);
     store.get(sid, (err, session) => {
         if (err) console.log(err);
         if (!session || !session.authInfo || err) {
-            connect.send("Вы не авторизованы!");
-            connect.terminate();
+            let resdata = createEmptyResponseData();
+            resdata.report = "Вы не авторизованы!";
+            connection.send(JSON.stringify(resdata));
+            connection.terminate();
         } else {
-            const { _id } = connect.authInfo = session.authInfo;
-            connect.authInfo.rooms = new Set(session.authInfo.rooms);
+            const { _id } = connection.authInfo = session.authInfo;
+            connection.authInfo.rooms = new Set(session.authInfo.rooms);
             if (!activeUsersCounter[_id]) {
                 activeUsersCounter[_id] = 1;
                 WSServer.clients.forEach(client => {
-                    if (hasIntersections(client.authInfo.rooms, connect.authInfo.rooms)) {
+                    if (hasIntersections(client.authInfo.rooms, connection.authInfo.rooms)) {
                         client.send(JSON.stringify({handlerType: "isOnline", _id}));
                     }
                 });
@@ -393,16 +353,15 @@ WSServer.on('connection', (connect, request) => {
             }
         }
     });
-    connect.on('pong', () => {
-        connect.isAlive = true;
+    connection.on('pong', () => {
+        connection.isAlive = true;
     });
-    connect.on('close',() => {
-        const { _id } = connect.authInfo;
-        console.log(`onclose ${_id}`);
+    connection.on('close',() => {
+        const { _id } = connection.authInfo;
         if (activeUsersCounter[_id] === 1) {
             delete activeUsersCounter[_id];
             WSServer.clients.forEach(client => {
-                if (hasIntersections(client.authInfo.rooms, connect.authInfo.rooms)) {
+                if (hasIntersections(client.authInfo.rooms, connection.authInfo.rooms)) {
                     client.send(JSON.stringify({handlerType: "isOffline", _id}));
                 }
             });
@@ -410,22 +369,70 @@ WSServer.on('connection', (connect, request) => {
             activeUsersCounter[_id]--;
         }
     });
-    connect.on('message', (message) => {
-        console.log('received: %s', message);
+    connection.on('message', (input) => {
+        // TODO: Перенести сюда обработку входящих сообщений
+        let resdata = createEmptyResponseData();
+        let rp = resdata.report;
+        const { room, text } = JSON.parse(input);
+        const { authInfo } = connection;
+
+        const isRequestCorrect = isStr(room) && isStr(text);
+        if (!isRequestCorrect) {
+            rp.info = "Неправильно составлен запрос";
+        } else if (!authInfo) {
+            rp.info = "Вы не авторизованы";
+        } else if (!text) {
+            rp.info = "Вы отправили пустое сообщение";
+        } else if (!authInfo.rooms.has(room)) {
+            rp.info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
+        }
+        if (rp.info) {
+            return connection.send(JSON.stringify({handlerType: "logs", response: resdata}));
+        }
+        const message = {
+            room,
+            author: authInfo.userName,
+            text,
+            time: new Date(Date.now())
+        };
+        messages.insertOne(message)
+        .then(result => {
+            rp.info = "Сообщение успешно отправлено";
+            rp.isError = false;
+            resdata.reply = {id: result.ops[0]._id};
+            WSServer.clients.forEach(client => {
+                if (client.authInfo.rooms.has(room)) {
+                    client.send(JSON.stringify({handlerType: "message", message}));
+                }
+            });
+        }).catch(err => {
+            console.log(err);
+            rp.info = err.message;
+        }).finally(() => {
+            connection.send(JSON.stringify({handlerType: "logs", response: resdata}));
+        });
     });
 });
 setInterval(() => {
     // Проверка на то, оставлять ли соединение активным
-    WSServer.clients.forEach(client => {
+    WSServer.clients.forEach(connection => {
         // Если соединение мертво, завершить
-        if (!client.isAlive) {
-            console.log(`onhardclose ${client.authInfo._id}`);
-            delete activeUsersCounter[client.authInfo._id];
-            return client.terminate();
+        if (!connection.isAlive) {
+            if (activeUsersCounter[connection.authInfo._id] === 1) {
+                delete activeUsersCounter[connection.authInfo._id];
+                WSServer.clients.forEach(client => {
+                    if (hasIntersections(client.authInfo.rooms, connection.authInfo.rooms)) {
+                        client.send(JSON.stringify({handlerType: "isOffline", _id: connection.authInfo._id}));
+                    }
+                });
+            } else {
+                activeUsersCounter[connection.authInfo._id]--;
+            }
+            return connection.terminate();
         }
         // обьявить все соединения мертвыми, а тех кто откликнется на ping, сделать живыми
-        client.isAlive = false;
-        client.ping(null, false, true);
+        connection.isAlive = false;
+        connection.ping(null, false, true);
     });
 }, 10000);
 mongoClient.connect(function (err, client) {
