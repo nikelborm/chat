@@ -1,16 +1,16 @@
-const express = require('express');
-const favicon = require('express-favicon');
+const express = require("express");
+const favicon = require("express-favicon");
 const mongodb = require("mongodb");
-const path = require('path');
-const session = require('express-session');
-const sha256 = require('sha256');
-const bodyParser = require('body-parser');
-const cookie = require('cookie');
-const cookieParser = require('cookie-parser');
-const redisStorage = require('connect-redis')(session);
-const redis = require('redis');
-const http = require('http');
-const WebSocket = require('ws'); // jshint ignore:line
+const path = require("path");
+const session = require("express-session");
+const sha256 = require("sha256");
+const bodyParser = require("body-parser");
+const cookie = require("cookie");
+const cookieParser = require("cookie-parser");
+const redisStorage = require("connect-redis")(session);
+const redis = require("redis");
+const http = require("http");
+const WebSocket = require("ws"); // jshint ignore:line
 
 function isStr(value) {
     return typeof value === "string";
@@ -45,7 +45,7 @@ function logout(request, response) {
     request.session.destroy(err => {
         if (err) return console.log(err);
         clearCookies(response, "userName", "fullName", "statusText", "avatarLink");
-        response.redirect('/');
+        response.redirect("/");
     });
 }
 function notifyAboutNewPersonInChat(authInfo) {
@@ -85,7 +85,7 @@ app.use(session({
     saveUninitialized: false
 }));
 app.use(cookieParser(secretKey));
-app.use(favicon(__dirname + '/build/favicon.ico'));
+app.use(favicon(__dirname + "/build/favicon.ico"));
 
 // Если человек сам зашёл на логин или его редиректнуло, идёт проверка авторизован ли он, если да то его редиректит на / то есть чат, если нет, то ему выкидывается страница логина
 // Вместе с страницей логина делаются доступными все файлы в нужной директории
@@ -100,20 +100,20 @@ app.use(favicon(__dirname + '/build/favicon.ico'));
 
 app.get("/", function (request, response) {
     if (request.session.authInfo) {
-        response.redirect('/chat');
+        response.redirect("/chat");
     } else {
-        response.sendFile(path.join(__dirname, 'authorize', 'index.html'));
+        response.sendFile(path.join(__dirname, "authorize", "index.html"));
     }
 });
-app.use("/", express.static(path.join(__dirname, 'authorize')));
+app.use("/", express.static(path.join(__dirname, "authorize")));
 app.get("/chat", function (request, response) {
     if (request.session.authInfo) {
-        response.sendFile(path.join(__dirname, 'build', 'index.html'));
+        response.sendFile(path.join(__dirname, "build", "index.html"));
     } else {
-        response.redirect('/');
+        response.redirect("/");
     }
 });
-app.use("/chat", express.static(path.join(__dirname, 'build')));
+app.use("/chat", express.static(path.join(__dirname, "build")));
 app.get("/deleteAccount", function(request, response) {
     users.deleteOne({"_id": new mongodb.ObjectId(request.session.authInfo._id)}, function(err, result){
         if (err) return console.log(err);
@@ -327,7 +327,7 @@ const server = http.createServer(app);
 const WSServer = new WebSocket.Server({
     server
 });
-WSServer.on('connection', (connection, request) => {
+WSServer.on("connection", (connection, request) => {
     connection.isAlive = true;
     const cookies = cookie.parse(request.headers.cookie);
     const sid = cookieParser.signedCookie(cookies["connect.sid"], secretKey);
@@ -353,10 +353,10 @@ WSServer.on('connection', (connection, request) => {
             }
         }
     });
-    connection.on('pong', () => {
+    connection.on("pong", () => {
         connection.isAlive = true;
     });
-    connection.on('close',() => {
+    connection.on("close",() => {
         const { _id } = connection.authInfo;
         if (activeUsersCounter[_id] === 1) {
             delete activeUsersCounter[_id];
@@ -369,7 +369,7 @@ WSServer.on('connection', (connection, request) => {
             activeUsersCounter[_id]--;
         }
     });
-    connection.on('message', (input) => {
+    connection.on("message", (input) => {
         // TODO: Перенести сюда обработку входящих сообщений
         let resdata = createEmptyResponseData();
         let rp = resdata.report;

@@ -1,6 +1,6 @@
-import React, { Component, createRef } from 'react';
-import Message from './Message';
-import getCookie from './getCookie';
+import React, { Component, createRef } from "react";
+import Message from "./Message";
+import getCookie from "./getCookie";
 class MessagesList extends Component {
     constructor(props) {
         super(props);

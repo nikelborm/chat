@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import React, { Fragment } from "react";
 import WindowArea from "./WindowArea";
 import WindowTitle from "./WindowTitle";
 function App() {

@@ -1,10 +1,10 @@
-import React, { Component } from 'react';
-import Tippy from '@tippy.js/react';
-import createEmojiToolTipBody from './createEmojiToolTipBody'
+import React, { Component } from "react";
+import Tippy from "@tippy.js/react";
+import createEmojiToolTipBody from "./createEmojiToolTipBody"
 
-import 'tippy.js/dist/tippy.css';
-import 'tippy.js/themes/light.css';
-import 'tippy.js/animations/perspective.css';
+import "tippy.js/dist/tippy.css";
+import "tippy.js/themes/light.css";
+import "tippy.js/animations/perspective.css";
 
 class InputForm extends Component {
     constructor(props) {

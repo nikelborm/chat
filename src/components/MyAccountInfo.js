@@ -1,6 +1,6 @@
 /* eslint-disable no-useless-concat */
-import React, { Component } from 'react';
-import getCookie from './getCookie';
+import React, { Component } from "react";
+import getCookie from "./getCookie";
 class MyAccountInfo extends Component {
     shouldComponentUpdate() {
         return false;

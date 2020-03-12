@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component } from "react";
 import InputForm from "./InputForm";
 import MessagesList from "./MessagesList";
 class ChatArea extends Component {

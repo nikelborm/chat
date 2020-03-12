@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
-import React from 'react';
-import Participant from './Participant';
+import React from "react";
+import Participant from "./Participant";
 function ParticipantsList(props) {
     const { usersList } = props;
     let listOfParticipants = [];

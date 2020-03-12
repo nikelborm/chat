@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component } from "react";
 import ConversationList from "./ConversationList";
 import ChatArea from "./ChatArea";
 import RightTabs from "./RightTabs";
@@ -20,10 +20,10 @@ class WindowArea extends Component {
     };
     loader = (path, pasteReplyIn, pasteSuccessIn) => {
         fetch(document.location.origin + path, {
-            method: 'post',
+            method: "post",
             body: JSON.stringify({ room: "global" }),
             headers: new Headers({
-                'Content-Type': 'application/json'
+                "Content-Type": "application/json"
             })
         }).then((response) => {
             return response.json()
