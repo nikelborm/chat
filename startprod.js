@@ -17,7 +17,9 @@ function isStr(value) {
 }
 function hasIntersections(setA, setB) {
     for (const elem of setB) {
-        if (setA.has(elem)) return true;
+        if (setA.has(elem)){
+            return true;
+        }
     }
 }
 function createEmptyResponseData() {
@@ -332,7 +334,9 @@ WSServer.on("connection", (connection, request) => {
     const cookies = cookie.parse(request.headers.cookie);
     const sid = cookieParser.signedCookie(cookies["connect.sid"], secretKey);
     store.get(sid, (err, session) => {
-        if (err) console.log(err);
+        if (err) {
+            console.log(err);
+        }
         if (!session || !session.authInfo || err) {
             let resdata = createEmptyResponseData();
             resdata.report = "Вы не авторизованы!";
@@ -436,7 +440,9 @@ setInterval(() => {
     });
 }, 10000);
 mongoClient.connect(function (err, client) {
-    if (err) return console.log(err);
+    if (err) {
+        return console.log(err);
+    }
     dbClient = client;
     users = client.db().collection("users");
     messages = client.db().collection("messages");
