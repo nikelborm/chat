@@ -186,7 +186,8 @@ b{
 	top: 35px;
 	right: 0;
 	bottom: 44px;
-	overflow-y: auto;
+	overflow-y: scroll;
+	overflow-x: hidden;
 	outline: none;
 }
 .chat-area ul{
@@ -442,4 +443,8 @@ ul.tabs-container{
 .ReactionButtons .emoji {
 	transition: transform 0.15s;
 	will-change: transform;
+}
+
+#myName {
+	overflow: hidden;
 }

@@ -18,9 +18,9 @@ class MessagesList extends Component {
         } else if ( !msgList.length ){
             info = (<strong>Сообщений пока нет, но вы можете это исправить!</strong>);
         }
-        const myName = getCookie("userName");
+        const myName = getCookie("userName") || "";
         return (
-            <div className="chat-list" ref={this.chatList} style={{overflowX: "hidden", overflowY: "scroll"}}>
+            <div className="chat-list" ref={this.chatList}>
                 <ul>
                     {msgList.map((item) => <Message key={item._id} data={item} myName={myName} />)}
                 </ul>

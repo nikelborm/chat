@@ -8,23 +8,25 @@ function createEmojiToolTipBody(onChoose) {
         {emoji: "😂", label: "Crying with laughter"},
         {emoji: "🎉", label: "Party"},
     ];
-    return <div className="ReactionButtons"> {
-        reactions.map(
-            (reaction) => (
-                <button
-                    key={reaction.label}
-                    className="emoji"
-                    onClick={
-                        (e) => {
-                            e.preventDefault();
-                            onChoose(reaction.emoji);
+    return (
+        <div className="ReactionButtons"> {
+            reactions.map(
+                (reaction) => (
+                    <button
+                        key={reaction.label}
+                        className="emoji"
+                        onClick={
+                            (e) => {
+                                e.preventDefault();
+                                onChoose(reaction.emoji);
+                            }
                         }
-                    }
-                >
-                    <div role="img"> {reaction.emoji} </div>
-                </button>
+                    >
+                        <div role="img"> {reaction.emoji} </div>
+                    </button>
+                )
             )
-        )
-    } </div>
+        } </div>
+    );
 }
 export default createEmojiToolTipBody;

@@ -6,9 +6,6 @@ class MyAccountInfo extends Component {
         return false;
     }
     render() {
-        const userName = getCookie("userName");
-        const fullName = getCookie("fullName");
-        const statusText = getCookie("statusText");
         return (
             <div className="my-account">
                 <div className="image">
@@ -17,11 +14,13 @@ class MyAccountInfo extends Component {
                     {/* TODO: Сделать чтобы можно выбрать свой онлайн и он ставился после задержки: offline, online, idle */}
                 </div>
                 <div className="name">
-                    <span id="myName" style={{overflow:"hidden"}} title={userName}>
-                    {fullName}
+                    <span id="myName" title={getCookie("userName") || "Error"}>
+                        {getCookie("fullName") || "Error"}
                     </span>
                     <i className="fa fa-angle-down"></i>
-                    <span className="availability">{statusText}</span>
+                    <span className="availability">
+                        {getCookie("statusText") || "Error"}
+                    </span>
                 </div>
             </div>
         );

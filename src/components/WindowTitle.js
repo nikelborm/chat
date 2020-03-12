@@ -11,7 +11,7 @@ function WindowTitle() {
                 <span>Чат</span>
             </div>
             <div className="exit" title="Выйти из аккаунта">
-                <i className="fa fa-times" onClick={()=>document.location.assign("logout")}></i>
+                <i className="fa fa-times" onClick={() => document.location.assign("logout")}></i>
             </div>
         </div>
     );
