@@ -40,7 +40,7 @@ class InputForm extends Component {
                         inertia={true}
                         arrow={false}
                         duration={[350, 200]}
-                        onCreate={instance => (this.instanceRef.current = instance)}
+                        onCreate={(instance) => (this.instanceRef.current = instance)}
                     >
                         <i className="fa fa-smile-o"></i>
                     </Tippy>

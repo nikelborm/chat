@@ -10,7 +10,7 @@ function createEmojiToolTipBody(onChoose) {
     ];
     return <div className="ReactionButtons"> {
         reactions.map(
-            reaction => (
+            (reaction) => (
                 <button
                     key={reaction.label}
                     className="emoji"

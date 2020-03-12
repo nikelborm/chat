@@ -42,7 +42,7 @@ function clearCookies(response, ...params) {
     }
 }
 function logout(request, response) {
-    request.session.destroy(err => {
+    request.session.destroy((err) => {
         if (err) return console.log(err);
         clearCookies(response, "userName", "fullName", "statusText", "avatarLink");
         response.redirect("/");
@@ -221,14 +221,14 @@ app.post("/canIregister", function (request, response) {
             resdata.reply.errorField = "email";
             throw new Error ("Эта почта занята. Если вы владелец, попробуйте <a href='/restore' style='color: #FFFFFF;'>восстановить аккаунт</a>.");
         }
-    }).then(result => {
+    }).then((result) => {
         const data = result.ops[0];
         request.session.authInfo = resdata.reply = data;
         fillCookies(response, data, "userName", "fullName", "statusText", "avatarLink");
         notifyAboutNewPersonInChat(data);
         rp.isError = false;
         rp.info = "Регистрация успешна";
-    }).catch(err => {
+    }).catch((err) => {
         rp.info = err.message;
     }).finally(() => {
         response.json(resdata);
@@ -396,7 +396,7 @@ WSServer.on("connection", (connection, request) => {
             time: new Date(Date.now())
         };
         messages.insertOne(message)
-        .then(result => {
+        .then((result) => {
             rp.info = "Сообщение успешно отправлено";
             rp.isError = false;
             resdata.reply = {id: result.ops[0]._id};
@@ -405,7 +405,7 @@ WSServer.on("connection", (connection, request) => {
                     client.send(JSON.stringify({handlerType: "message", message}));
                 }
             });
-        }).catch(err => {
+        }).catch((err) => {
             console.log(err);
             rp.info = err.message;
         }).finally(() => {
@@ -415,12 +415,12 @@ WSServer.on("connection", (connection, request) => {
 });
 setInterval(() => {
     // Проверка на то, оставлять ли соединение активным
-    WSServer.clients.forEach(connection => {
+    WSServer.clients.forEach((connection) => {
         // Если соединение мертво, завершить
         if (!connection.isAlive) {
             if (activeUsersCounter[connection.authInfo._id] === 1) {
                 delete activeUsersCounter[connection.authInfo._id];
-                WSServer.clients.forEach(client => {
+                WSServer.clients.forEach((client) => {
                     if (hasIntersections(client.authInfo.rooms, connection.authInfo.rooms)) {
                         client.send(JSON.stringify({handlerType: "isOffline", _id: connection.authInfo._id}));
                     }
