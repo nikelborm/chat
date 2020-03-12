@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import Tippy from "@tippy.js/react";
-import createEmojiToolTipBody from "./createEmojiToolTipBody"
+import createEmojiToolTipBody from "./createEmojiToolTipBody";
 
 import "tippy.js/dist/tippy.css";
 import "tippy.js/themes/light.css";

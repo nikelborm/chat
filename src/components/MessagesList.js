@@ -14,9 +14,9 @@ class MessagesList extends Component {
         const { msgList, isLoading } = this.props;
         let info;
         if (isLoading) {
-            info = (<strong>Сообщения загружаются, пожалуйста подождите</strong>)
+            info = (<strong>Сообщения загружаются, пожалуйста подождите</strong>);
         } else if ( !msgList.length ){
-            info = (<strong>Сообщений пока нет, но вы можете это исправить!</strong>)
+            info = (<strong>Сообщений пока нет, но вы можете это исправить!</strong>);
         }
         const myName = getCookie("userName");
         return (

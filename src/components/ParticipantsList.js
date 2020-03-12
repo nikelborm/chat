@@ -6,7 +6,7 @@ function ParticipantsList(props) {
     let listOfParticipants = [];
     for (const userId in usersList) {
         if (usersList.hasOwnProperty(userId)) {
-            listOfParticipants.push(<Participant key={userId} data={usersList[userId]} />)
+            listOfParticipants.push(<Participant key={userId} data={usersList[userId]} />);
         }
     }
     return (

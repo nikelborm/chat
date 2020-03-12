@@ -26,7 +26,7 @@ class WindowArea extends Component {
                 "Content-Type": "application/json"
             })
         }).then((response) => {
-            return response.json()
+            return response.json();
         }).then((data) => {
             console.log(data)
             const {reply, report} = data;
@@ -41,7 +41,7 @@ class WindowArea extends Component {
     componentDidUpdate = () => {
         if (this.state.ischatHistoryLoaded && this.state.isUsersListInRoomDownloaded && !this.cometCreated) {
             const createOrRespawnWebSocket = () => {
-                const protocol = document.location.protocol[4] === "s" ? "wss://": "ws://"
+                const protocol = document.location.protocol[4] === "s" ? "wss://": "ws://";
                 window.socket = new WebSocket(protocol + document.location.host);
                 window.socket.onopen = function (e) {
                     window.isSocketAvailable = true;
@@ -50,9 +50,9 @@ class WindowArea extends Component {
                 window.socket.onmessage = (event) => {
                     console.log("[message] Данные получены с сервера:");
                     const data = JSON.parse(event.data);
-                    console.log("Отчёт:")
-                    console.log(event)
-                    console.log(data)
+                    console.log("Отчёт:");
+                    console.log(event);
+                    console.log(data);
                     switch (data.handlerType) {
                         case "logs":
                             console.log("Пришли ответные логи");
@@ -103,7 +103,7 @@ class WindowArea extends Component {
                     setTimeout(createOrRespawnWebSocket, 1000);
                     // TODO: Добавить нарастающую задержку перед следующим переподключением
                 };
-            }
+            };
             createOrRespawnWebSocket();
             this.cometCreated = true;
         }
