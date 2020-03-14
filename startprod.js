@@ -279,7 +279,7 @@ app.post("/canIregister", function (request, response) {
         const data = result.ops[0];
         request.session.authInfo = resdata.reply = data;
         fillCookies(response, data, "userName", "fullName", "statusText", "avatarLink");
-        notifyAboutNewPersonInChat(data);
+        notifyAboutNewPersonInChat(data, "global");
         rp.isError = false;
         rp.info = "Регистрация успешна";
     }).catch((err) => {
