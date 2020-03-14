@@ -446,7 +446,9 @@ mongoClient.connect(function (err, client) {
 });
 process.on("SIGINT", () => {
     // На самом деле я не думаю, что это всерьёз будет работать
-    WSServer.clients.forEach((connect) => connect.close(1000, "Сервер выключен или перезагружается."));
+    WSServer.close(() => {
+        console.log("Все WebSocket соединения успешно завершены");
+    });
     dbClient.close();
     process.exit();
 });
