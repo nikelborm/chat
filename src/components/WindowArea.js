@@ -92,7 +92,8 @@ class WindowArea extends Component {
                     window.isSocketAvailable = false;
                     console.log("[close] Соединение закрыто. Отчёт:");
                     console.log(event);
-                    createOrRespawnWebSocket();
+                    window.socket = null;
+                    setTimeout(createOrRespawnWebSocket, 3000);
                     // TODO: Добавить нарастающую задержку перед следующим переподключением
                 };
                 window.socket.onerror = function (error) {
@@ -100,8 +101,6 @@ class WindowArea extends Component {
                     window.isSocketAvailable = false;
                     console.error("[error] Ошибка! Отчёт:");
                     console.log(error);
-                    setTimeout(createOrRespawnWebSocket, 1000);
-                    // TODO: Добавить нарастающую задержку перед следующим переподключением
                 };
             };
             createOrRespawnWebSocket();

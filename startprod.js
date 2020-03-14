@@ -1,3 +1,4 @@
+/* eslint-disable default-case */
 const express = require("express");
 const favicon = require("express-favicon");
 const mongodb = require("mongodb");
@@ -12,16 +13,6 @@ const redis = require("redis");
 const http = require("http");
 const WebSocket = require("ws"); // jshint ignore:line
 
-function isStr(value) {
-    return typeof value === "string";
-}
-function hasIntersections(setA, setB) {
-    for (const elem of setB) {
-        if (setA.has(elem)){
-            return true;
-        }
-    }
-}
 function createEmptyResponseData() {
     return {
         report: {
@@ -30,6 +21,115 @@ function createEmptyResponseData() {
         },
         reply: {}
     };
+}
+function validate(mode, body, authInfo) {
+    /* body не сам, а только необходимые параметры */
+    let resdata = createEmptyResponseData();
+    const { userNameOrEmail, password, userName, confirmPassword, fullName, email, room, text } = body;
+    let isRequestCorrect = 1;
+    for (let prop in body) {
+        isRequestCorrect &= typeof body[prop] === "string";
+    }
+    let info = "";
+    let errorField = "";
+
+    if (!isRequestCorrect) {
+        resdata.report.info = "Неправильно составлен запрос";
+        return resdata;
+    }
+    switch ("") {
+        case userNameOrEmail:
+            info = "Вы не ввели никнейм или почту";
+            errorField = "userNameOrEmail";
+            break;
+        case fullName:
+            info = "Вы не ввели ваше имя";
+            errorField = "fullName";
+            break;
+        case userName:
+            info = "Вы не ввели никнейм";
+            errorField = "userName";
+            break;
+        case email:
+            info = "Вы не ввели почту";
+            errorField = "email";
+            break;
+        case password:
+            info = "Вы не ввели пароль";
+            errorField = mode === "login" ? "passwordLogin" : "passwordRegister";
+            break;
+        case text:
+            info = "Вы отправили пустое сообщение";
+    }
+    if (["loadChatHistory", "loadListOfUsersInChat", "onmessage"].includes(mode)) {
+        if (!authInfo) {
+            info = "Вы не авторизованы";
+        } else {
+            let { rooms } = authInfo;
+            if (!rooms[rooms instanceof Set ? 'has': 'includes'](room)) {
+                info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
+            }
+        }
+    }
+    if (info) {
+        if (errorField) {
+            resdata.reply.errorField = errorField;
+        }
+        resdata.report.info = info;
+        return resdata;
+    }
+    if (mode === "register") {
+        if (password.length < 8) {
+            info = "Длина пароля должна быть от 8 символов";
+            errorField = "passwordRegister";
+        } else if (password.length > 40) {
+            info = "Длина пароля должна быть до 40 символов";
+            errorField = "passwordRegister";
+        } else if (confirmPassword !== password) {
+            info = "Пароли не совпадают";
+            errorField = "confirmPassword";
+        }
+    }
+
+    if (errorField) {
+        resdata.reply.errorField = errorField;
+    }
+    resdata.report.info = info;
+    return resdata;
+}
+function sendToEveryoneKnown(messageBody, userRooms) {
+    WSServer.clients.forEach(function (client) {
+        // if hasIntersections
+        for (const elem of userRooms) {
+            if (client.authInfo.rooms.has(elem)){
+                client.send(JSON.stringify(messageBody));
+                return;
+            }
+        }
+    });
+}
+function sendToEveryoneInRoom(messageBody, room) {
+    WSServer.clients.forEach(function (client) {
+        if (client.authInfo.rooms.has(room)) {
+            client.send(JSON.stringify(messageBody));
+        }
+    });
+}
+function onCloseWSconnection(connection) {
+    const { _id } = connection.authInfo;
+    if (activeUsersCounter[_id] === 1) {
+        delete activeUsersCounter[_id];
+        sendToEveryoneKnown({handlerType: "isOffline", _id}, connection.authInfo.rooms);
+    } else {
+        activeUsersCounter[_id]--;
+    }
+}
+function redirectIfNecessary(target, request, response) {
+    if (!!request.session.authInfo ^ target === "/") {
+        response.sendFile(path.join(__dirname, target === "/" ? "authorize" : "build", "index.html"));
+    } else {
+        response.redirect(target === "/" ? "/chat" : "/");
+    }
 }
 function fillCookies(response, dataObj, ...params) {
     for (const param of params) {
@@ -50,18 +150,14 @@ function logout(request, response) {
         response.redirect("/");
     });
 }
-function notifyAboutNewPersonInChat(authInfo) {
+function notifyAboutNewPersonInChat(authInfo, room) {
     const id = authInfo._id.toString();
     const user = {
         userName: authInfo.userName,
         fullName: authInfo.fullName,
         onlineStatus: activeUsersCounter[id] ? "online" : "offline"
     };
-    WSServer.clients.forEach(client => {
-        if (hasIntersections(client.authInfo.rooms, authInfo.rooms)) {
-            client.send(JSON.stringify({handlerType: "newPersonInChat", id, user}));
-        }
-    });
+    sendToEveryoneInRoom({handlerType: "newPersonInChat", id, user, room}, room);
 }
 
 const port = process.env.PORT || 3000;
@@ -70,6 +166,11 @@ const redisLink = process.env.REDIS_URL || "redis://admin:foobared@127.0.0.1:637
 const secretKey = process.env.SECRET || "wHaTeVeR123";
 // const mailLogin = process.env.GMAIL_LOGIN || "wHaTeVeR123";
 // const mailPassword = process.env.GMAIL_PASS || "wHaTeVeR123";
+
+let dbClient;
+let users;
+let messages;
+let activeUsersCounter = {};
 
 const app = express();
 const store = new redisStorage({
@@ -94,28 +195,18 @@ app.use(favicon(__dirname + "/build/favicon.ico"));
 // Если человек сам зашёл на чат или его редиректнуло, так же идёт проверка авторизован ли он, если да то он остаётся тут, иначе его редиректит на логин
 // Становятся доступными все файлы в директории чата
 
-// TODO: Сделать проверку есть ли пользователь (хранящийся в сессии) в базе (на случай если была авторизация на нескольких устройствах, а акк удалён из базы) в этих пунктах:
+// TODO: Сделать проверку есть ли пользователь (хранящийся в сессии) в базе в этих пунктах (на случай если была авторизация на нескольких устройствах, а акк удалён из базы):
 //   /
 //   /chat
 //   /loadChatHistory
 //   /loadListOfUsersInChat
 
-app.get("/", function (request, response) {
-    if (request.session.authInfo) {
-        response.redirect("/chat");
-    } else {
-        response.sendFile(path.join(__dirname, "authorize", "index.html"));
-    }
-});
+app.get("/", redirectIfNecessary.bind(undefined, "/"));
 app.use("/", express.static(path.join(__dirname, "authorize")));
-app.get("/chat", function (request, response) {
-    if (request.session.authInfo) {
-        response.sendFile(path.join(__dirname, "build", "index.html"));
-    } else {
-        response.redirect("/");
-    }
-});
+
+app.get("/chat", redirectIfNecessary.bind(undefined, "/chat"));
 app.use("/chat", express.static(path.join(__dirname, "build")));
+
 app.get("/deleteAccount", function(request, response) {
     users.deleteOne({"_id": new mongodb.ObjectId(request.session.authInfo._id)}, function(err, result){
         if (err) return console.log(err);
@@ -126,28 +217,16 @@ app.get("/deleteAccount", function(request, response) {
 app.get("/logout", logout);
 
 app.post("/canIlogin", function (request, response) {
-    let resdata = createEmptyResponseData();
-    let rp = resdata.report;
     const { userNameOrEmail, password } = request.body;
+    let resdata = validate("login", { userNameOrEmail, password });
+    let rp = resdata.report;
 
-    let errorField = "";
-    const isRequestCorrect = isStr(userNameOrEmail) && isStr(password);
-    if (!isRequestCorrect) {
-        rp.info = "Неправильно составлен запрос";
-    } else if (!userNameOrEmail) {
-        rp.info = "Вы не ввели никнейм или почту";
-        errorField = "userNameOrEmail";
-    } else if (!password) {
-        rp.info = "Вы не ввели пароль";
-        errorField = "passwordLogin";
-    }
     if (rp.info) {
-        resdata.reply.errorField = errorField;
         return response.json(resdata);
     }
 
     users.findOne({$or: [{ userName: userNameOrEmail }, { email: userNameOrEmail }]})
-    .then(result => {
+    .then((result) => {
         if (!result) {
             resdata.reply.errorField = "userNameOrEmail";
             throw new Error ("Пользователь с указанными логином или почтой не найден");
@@ -159,7 +238,7 @@ app.post("/canIlogin", function (request, response) {
         fillCookies(response, result, "userName", "fullName", "statusText", "avatarLink");
         rp.isError = false;
         rp.info = "Успешная авторизация";
-    }).catch(err => {
+    }).catch((err) => {
         rp.info = err.message;
     }).finally(() => {
         response.json(resdata);
@@ -167,43 +246,16 @@ app.post("/canIlogin", function (request, response) {
 });
 app.post("/canIregister", function (request, response) {
     // TODO: Добавить проверку почты через присылание письма
-    let resdata = createEmptyResponseData();
-    let rp = resdata.report;
     const { userName, password, confirmPassword, fullName, email } = request.body;
+    let resdata = validate("register", { userName, password, confirmPassword, fullName, email });
+    let rp = resdata.report;
 
-    let errorField = "";
-    const isRequestCorrect = isStr(userName) && isStr(password) && isStr(confirmPassword) && isStr(fullName) && isStr(email);
-    if (!isRequestCorrect) {
-        rp.info = "Неправильно составлен запрос";
-    } else if (!userName) {
-        rp.info = "Вы не ввели никнейм";
-        errorField = "userName";
-    } else if (!email) {
-        rp.info = "Вы не ввели почту";
-        errorField = "email";
-    } else if (!password) {
-        rp.info = "Вы не ввели пароль";
-        errorField = "passwordRegister";
-    } else if (!fullName) {
-        rp.info = "Вы не ввели ваше имя";
-        errorField = "fullName";
-    } else if (password.length < 8) {
-        rp.info = "Длина пароля должна быть от 8 символов";
-        errorField = "passwordRegister";
-    } else if (password.length > 40) {
-        rp.info = "Длина пароля должна быть до 40 символов";
-        errorField = "passwordRegister";
-    } else if (confirmPassword !== password) {
-        rp.info = "Пароли не совпадают";
-        errorField = "confirmPassword";
-    }
     if (rp.info) {
-        resdata.reply.errorField = errorField;
         return response.json(resdata);
     }
 
     users.findOne({ $or: [{ userName }, { email }] })
-    .then(result => {
+    .then((result) => {
         if (!result) { // Не нашёл никаких результатов
             const userProfile = {
                 userName,
@@ -245,24 +297,16 @@ app.post("/canIregister", function (request, response) {
 // });
 // TODO: Добавить восстановление аккаунта по почте
 app.post("/loadChatHistory", function (request, response) {
-    let resdata = createEmptyResponseData();
-    let rp = resdata.report;
     const { room } = request.body;
-    const { authInfo } = request.session;
+    let resdata = validate("loadChatHistory", { room }, request.session.authInfo);
+    let rp = resdata.report;
 
-    const isRequestCorrect = isStr(room);
-    if (!isRequestCorrect) {
-        rp.info = "Неправильно составлен запрос";
-    } else if (!authInfo) {
-        rp.info = "Вы не авторизованы";
-    } else if (!authInfo.rooms.includes(room)) {
-        rp.info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
-    }
     if (rp.info) {
         return response.json(resdata);
     }
 
-    messages.find({room}, {projection: {room: 0}}).toArray((err, results) => {
+    messages.find({room}, {projection: {room: 0}})
+    .toArray((err, results) => {
         if (err) {
             rp.info = err.message;
             console.log(err);
@@ -275,19 +319,10 @@ app.post("/loadChatHistory", function (request, response) {
     });
 });
 app.post("/loadListOfUsersInChat", function (request, response) {
-    let resdata = createEmptyResponseData();
-    let rp = resdata.report;
     const { room } = request.body;
-    const { authInfo } = request.session;
+    let resdata = validate("loadListOfUsersInChat", { room }, request.session.authInfo);
+    let rp = resdata.report;
 
-    const isRequestCorrect = isStr(room);
-    if (!isRequestCorrect) {
-        rp.info = "Неправильно составлен запрос";
-    } else if (!authInfo) {
-        rp.info = "Вы не авторизованы";
-    } else if (!authInfo.rooms.includes(room)) {
-        rp.info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
-    }
     if (rp.info) {
         return response.json(resdata);
     }
@@ -303,7 +338,7 @@ app.post("/loadListOfUsersInChat", function (request, response) {
             };
             results[id] = user;
         },
-        function(err) {
+        function (err) {
             if (err) {
                 console.log(err);
                 rp.info = err;
@@ -317,14 +352,6 @@ app.post("/loadListOfUsersInChat", function (request, response) {
     );
 });
 
-const mongoClient = new mongodb.MongoClient(mongoLink, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-});
-let dbClient;
-let users;
-let messages;
-let activeUsersCounter = {};
 const server = http.createServer(app);
 const WSServer = new WebSocket.Server({
     server
@@ -347,11 +374,7 @@ WSServer.on("connection", (connection, request) => {
             connection.authInfo.rooms = new Set(session.authInfo.rooms);
             if (!activeUsersCounter[_id]) {
                 activeUsersCounter[_id] = 1;
-                WSServer.clients.forEach(client => {
-                    if (hasIntersections(client.authInfo.rooms, connection.authInfo.rooms)) {
-                        client.send(JSON.stringify({handlerType: "isOnline", _id}));
-                    }
-                });
+                sendToEveryoneKnown({handlerType: "isOnline", _id}, connection.authInfo.rooms);
             } else {
                 activeUsersCounter[_id]++;
             }
@@ -360,36 +383,15 @@ WSServer.on("connection", (connection, request) => {
     connection.on("pong", () => {
         connection.isAlive = true;
     });
-    connection.on("close",() => {
-        const { _id } = connection.authInfo;
-        if (activeUsersCounter[_id] === 1) {
-            delete activeUsersCounter[_id];
-            WSServer.clients.forEach(client => {
-                if (hasIntersections(client.authInfo.rooms, connection.authInfo.rooms)) {
-                    client.send(JSON.stringify({handlerType: "isOffline", _id}));
-                }
-            });
-        } else {
-            activeUsersCounter[_id]--;
-        }
+    connection.on("close", () => {
+        onCloseWSconnection(connection);
     });
     connection.on("message", (input) => {
-        // TODO: Перенести сюда обработку входящих сообщений
-        let resdata = createEmptyResponseData();
-        let rp = resdata.report;
-        const { room, text } = JSON.parse(input);
         const { authInfo } = connection;
+        const { room, text } = JSON.parse(input);
+        let resdata = validate("onmessage", { room, text }, authInfo);
+        let rp = resdata.report;
 
-        const isRequestCorrect = isStr(room) && isStr(text);
-        if (!isRequestCorrect) {
-            rp.info = "Неправильно составлен запрос";
-        } else if (!authInfo) {
-            rp.info = "Вы не авторизованы";
-        } else if (!text) {
-            rp.info = "Вы отправили пустое сообщение";
-        } else if (!authInfo.rooms.has(room)) {
-            rp.info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
-        }
         if (rp.info) {
             return connection.send(JSON.stringify({handlerType: "logs", response: resdata}));
         }
@@ -404,11 +406,7 @@ WSServer.on("connection", (connection, request) => {
             rp.info = "Сообщение успешно отправлено";
             rp.isError = false;
             resdata.reply = {id: result.ops[0]._id};
-            WSServer.clients.forEach(client => {
-                if (client.authInfo.rooms.has(room)) {
-                    client.send(JSON.stringify({handlerType: "message", message}));
-                }
-            });
+            sendToEveryoneInRoom({handlerType: "message", message}, room);
         }).catch((err) => {
             console.log(err);
             rp.info = err.message;
@@ -422,16 +420,7 @@ setInterval(() => {
     WSServer.clients.forEach((connection) => {
         // Если соединение мертво, завершить
         if (!connection.isAlive) {
-            if (activeUsersCounter[connection.authInfo._id] === 1) {
-                delete activeUsersCounter[connection.authInfo._id];
-                WSServer.clients.forEach((client) => {
-                    if (hasIntersections(client.authInfo.rooms, connection.authInfo.rooms)) {
-                        client.send(JSON.stringify({handlerType: "isOffline", _id: connection.authInfo._id}));
-                    }
-                });
-            } else {
-                activeUsersCounter[connection.authInfo._id]--;
-            }
+            onCloseWSconnection(connection);
             return connection.terminate();
         }
         // обьявить все соединения мертвыми, а тех кто откликнется на ping, сделать живыми
@@ -439,6 +428,11 @@ setInterval(() => {
         connection.ping(null, false, true);
     });
 }, 10000);
+
+const mongoClient = new mongodb.MongoClient(mongoLink, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+});
 mongoClient.connect(function (err, client) {
     if (err) {
         return console.log(err);
