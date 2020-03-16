@@ -221,9 +221,7 @@ app.post("/canIlogin", function (request, response) {
     let resdata = validate("login", { userNameOrEmail, password });
     let rp = resdata.report;
 
-    if (rp.info) {
-        return response.json(resdata);
-    }
+    if (rp.info) return response.json(resdata);
 
     users.findOne({$or: [{ userName: userNameOrEmail }, { email: userNameOrEmail }]})
     .then((result) => {
@@ -250,9 +248,7 @@ app.post("/canIregister", function (request, response) {
     let resdata = validate("register", { userName, password, confirmPassword, fullName, email });
     let rp = resdata.report;
 
-    if (rp.info) {
-        return response.json(resdata);
-    }
+    if (rp.info) return response.json(resdata);
 
     users.findOne({ $or: [{ userName }, { email }] })
     .then((result) => {
@@ -301,9 +297,7 @@ app.post("/loadChatHistory", function (request, response) {
     let resdata = validate("loadChatHistory", { room }, request.session.authInfo);
     let rp = resdata.report;
 
-    if (rp.info) {
-        return response.json(resdata);
-    }
+    if (rp.info) return response.json(resdata);
 
     messages.find({room}, {projection: {room: 0}})
     .toArray((err, results) => {
@@ -323,9 +317,8 @@ app.post("/loadListOfUsersInChat", function (request, response) {
     let resdata = validate("loadListOfUsersInChat", { room }, request.session.authInfo);
     let rp = resdata.report;
 
-    if (rp.info) {
-        return response.json(resdata);
-    }
+    if (rp.info) return response.json(resdata);
+
     let results = {};
     users.find({rooms: room}, {projection: { userName:1, fullName:1 }})
     .forEach(
