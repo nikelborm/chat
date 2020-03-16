@@ -15,10 +15,11 @@
     "ws": "^7.2.1"
   },
   "scripts": {
-    "start_development_server": "react-scripts start",
     "build": "react-scripts build",
+    "build_with_profiling": "npm run build -- --profile",
+    "build_and_start_production_server": "react-scripts build && node startprod.js",
     "start_production_server": "node startprod.js",
-    "build_and_start_production_server": "react-scripts build && node startprod.js"
+    "start_development_server": "react-scripts start"
   },
   "eslintConfig": {
     "extends": "react-app"
