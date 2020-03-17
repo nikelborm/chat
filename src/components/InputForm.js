@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { PureComponent } from "react";
 import Tippy from "@tippy.js/react";
 import createEmojiToolTipBody from "./createEmojiToolTipBody";
 
@@ -6,7 +6,7 @@ import "tippy.js/dist/tippy.css";
 import "tippy.js/themes/light.css";
 import "tippy.js/animations/perspective.css";
 
-class InputForm extends Component {
+class InputForm extends PureComponent {
     constructor(props) {
         super(props);
         this.inputArea = React.createRef();
