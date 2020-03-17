@@ -1,5 +1,5 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
-import React, { PureComponent } from 'react';
+import React, { PureComponent } from "react";
 
 class Participant extends PureComponent {
     render() {

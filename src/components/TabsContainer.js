@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component } from "react";
 class TabsContainer extends Component {
     render() {
         // TODO: добавить нормальную работу с вкладками

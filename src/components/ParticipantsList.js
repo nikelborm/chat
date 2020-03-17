@@ -1,5 +1,5 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
-import React, { Component } from 'react';
+import React, { Component } from "react";
 import Participant from "./Participant";
 // import shallowCompare from 'react-addons-shallow-compare';
 class ParticipantsList extends Component {
