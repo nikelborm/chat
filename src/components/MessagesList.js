@@ -2,6 +2,10 @@ import React, { Component, createRef } from "react";
 import Message from "./Message";
 import getCookie from "./getCookie";
 class MessagesList extends Component {
+    shouldComponentUpdate(nextProps, nextState) {
+        return this.props.msgList.length !== nextProps.msgList.length;
+        // TODO: Как добавлю редактирование сообщений, прокачать это
+    }
     constructor(props) {
         super(props);
         this.chatList = createRef();
