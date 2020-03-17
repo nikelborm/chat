@@ -1,18 +1,24 @@
 import React, { Component } from "react";
-import ConversationList from "./ConversationList";
-import ChatArea from "./ChatArea";
+import InputForm from "./InputForm";
+import MessagesList from "./MessagesList";
+import ParticipantsList from "./ParticipantsList";
+import MyAccountInfo from "./MyAccountInfo";
 import RightTabs from "./RightTabs";
 
+// const whyDidYouRender = require('@welldone-software/why-did-you-render');
+// whyDidYouRender(React, {
+//     trackAllPureComponents: true,
+// });
 class WindowArea extends Component {
     constructor(props) {
         super(props);
         this.cometCreated = false;
+        this.ischatHistoryLoaded = false;
+        this.isUsersListInRoomDownloaded = false;
     }
     state = {
         msgList: [],
-        usersInGlobalRoom: {},
-        ischatHistoryLoaded: false,
-        isUsersListInRoomDownloaded: false
+        usersInGlobalRoom: {}
     };
     componentDidMount = () => {
         this.loader("/loadChatHistory", "msgList", "ischatHistoryLoaded");
@@ -31,15 +37,15 @@ class WindowArea extends Component {
             console.log(data);
             const {reply, report} = data;
             if (!report.isError) {
+                this[pasteSuccessIn] = true;
                 this.setState({
-                    [pasteReplyIn]: reply,
-                    [pasteSuccessIn]: true
+                    [pasteReplyIn]: reply
                 });
             }
         }); // TODO: Добавить обработку ошибки соединения (можно с TIPPY)
     };
     componentDidUpdate = () => {
-        if (this.state.ischatHistoryLoaded && this.state.isUsersListInRoomDownloaded && !this.cometCreated) {
+        if (this.ischatHistoryLoaded && this.isUsersListInRoomDownloaded && !this.cometCreated) {
             const createOrRespawnWebSocket = () => {
                 const protocol = document.location.protocol[4] === "s" ? "wss://": "ws://";
                 window.socket = new WebSocket(protocol + document.location.host);
@@ -93,6 +99,7 @@ class WindowArea extends Component {
                     console.log("[close] Соединение закрыто. Отчёт:");
                     console.log(event);
                     window.socket = null;
+                    // this.componentDidMount();
                     setTimeout(createOrRespawnWebSocket, 3000);
                     // TODO: Добавить нарастающую задержку перед следующим переподключением
                 };
@@ -108,11 +115,24 @@ class WindowArea extends Component {
         }
     };
     render() {
-        const {msgList, ischatHistoryLoaded, usersInGlobalRoom} = this.state;
+        // TODO: Убрать лишние ререндеры у компонентов
+        // TODO: Сделать чтобы рендерились так чтобы даже людей с одинаковыми никами можно было отличить
+        // А основы авторства составлял уникальный ID ключ
+        const {msgList, usersInGlobalRoom} = this.state;
         return (
             <div className="window-area">
-                <ConversationList usersList={usersInGlobalRoom}/>
-                <ChatArea msgList={msgList} isLoading={!ischatHistoryLoaded}/>
+                <div className="conversation-list">
+                    <ParticipantsList usersList={usersInGlobalRoom} />
+                    <MyAccountInfo />
+                </div>
+                <div className="chat-area">
+                    <div className="title">
+                        <b> Переписка </b>
+                        <i className="fa fa-search"></i>
+                    </div>
+                    <MessagesList msgList={msgList} isLoading={!this.ischatHistoryLoaded} />
+                    <InputForm/>
+                </div>
                 <RightTabs />
             </div>
         );

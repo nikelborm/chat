@@ -1,10 +1,7 @@
 /* eslint-disable no-useless-concat */
-import React, { Component } from "react";
+import React, { PureComponent } from "react";
 import getCookie from "./getCookie";
-class MyAccountInfo extends Component {
-    shouldComponentUpdate() {
-        return false;
-    }
+class MyAccountInfo extends PureComponent {
     render() {
         return (
             <div className="my-account">

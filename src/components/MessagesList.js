@@ -18,11 +18,19 @@ class MessagesList extends Component {
         } else if ( !msgList.length ){
             info = (<strong>Сообщений пока нет, но вы можете это исправить!</strong>);
         }
-        const myName = getCookie("userName") || "";
+        const myID = getCookie("userName") || "";
         return (
             <div className="chat-list" ref={this.chatList}>
                 <ul>
-                    {msgList.map((item) => <Message key={item._id} data={item} myName={myName} />)}
+                    {msgList.map(({ _id, author: authorUserName, text, time }) => (
+                        <Message
+                            key={_id}
+                            myID={myID}
+                            authorID={authorUserName}
+                            text={text}
+                            time={time}
+                        />
+                    ))}
                 </ul>
                 {info}
                 <span ref={this.down}></span>

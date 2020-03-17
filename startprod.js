@@ -227,16 +227,19 @@ app.post("/canIlogin", function (request, response) {
     .then((result) => {
         if (!result) {
             resdata.reply.errorField = "userNameOrEmail";
-            throw new Error ("Пользователь с указанными логином или почтой не найден");
+            rp.info = "Пользователь с указанными логином или почтой не найден";
         } else if (result.password !== sha256(password)) {
             resdata.reply.errorField = "passwordLogin";
-            throw new Error ("Неверный пароль");
+            rp.info = "Неверный пароль";
         }
+        if (rp.info) return;
+
         request.session.authInfo = resdata.reply = result;
         fillCookies(response, result, "userName", "fullName", "statusText", "avatarLink");
         rp.isError = false;
         rp.info = "Успешная авторизация";
     }).catch((err) => {
+        console.log(err);
         rp.info = err.message;
     }).finally(() => {
         response.json(resdata);
@@ -264,14 +267,17 @@ app.post("/canIregister", function (request, response) {
                 rooms: ["global"]
             };
             return users.insertOne(userProfile); // Возвращаем промис
-        } else if (result.userName === userName) {
+        }
+        if (result.userName === userName) {
             resdata.reply.errorField = "userName";
-            throw new Error ("Этот никнейм занят. Если вы владелец, попробуйте <a href='/restore' style='color: #FFFFFF;'>восстановить аккаунт</a>.");
+            rp.info = "Этот никнейм занят.";
         } else if (result.email === email) {
             resdata.reply.errorField = "email";
-            throw new Error ("Эта почта занята. Если вы владелец, попробуйте <a href='/restore' style='color: #FFFFFF;'>восстановить аккаунт</a>.");
+            rp.info = "Эта почта занята.";
         }
+        rp.info += " Если вы владелец, попробуйте <a href='/restore' style='color: #FFFFFF;'>восстановить аккаунт</a>.";
     }).then((result) => {
+        if (rp.info) return;
         const data = result.ops[0];
         request.session.authInfo = resdata.reply = data;
         fillCookies(response, data, "userName", "fullName", "statusText", "avatarLink");
@@ -368,6 +374,7 @@ WSServer.on("connection", (connection, request) => {
             if (!activeUsersCounter[_id]) {
                 activeUsersCounter[_id] = 1;
                 sendToEveryoneKnown({handlerType: "isOnline", _id}, connection.authInfo.rooms);
+                // TODO: Отправить новичку инфу о том кто он?
             } else {
                 activeUsersCounter[_id]++;
             }
