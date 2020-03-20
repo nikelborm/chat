@@ -9,6 +9,7 @@ import RightTabs from "./RightTabs";
 // whyDidYouRender(React, {
 //     trackAllPureComponents: true,
 // });
+// "@welldone-software/why-did-you-render": "^4.0.5",
 class WindowArea extends Component {
     constructor(props) {
         super(props);
@@ -47,8 +48,9 @@ class WindowArea extends Component {
     componentDidUpdate = () => {
         if (this.ischatHistoryLoaded && this.isUsersListInRoomDownloaded && !this.cometCreated) {
             const createOrRespawnWebSocket = () => {
-                const protocol = document.location.protocol[4] === "s" ? "wss://": "ws://";
-                window.socket = new WebSocket(protocol + document.location.host);
+                const loc = document.location;
+                const adress = (loc.protocol[4] === "s" ? "wss://": "ws://") + (loc.port === "3001" ? loc.hostname + ":3000" : loc.host);
+                window.socket = new WebSocket(adress);
                 window.socket.onopen = function (e) {
                     window.isSocketAvailable = true;
                     console.log("[open] Соединение установлено");

@@ -17,10 +17,9 @@
   },
   "scripts": {
     "build": "react-scripts build",
-    "build_with_profiling": "npm run build -- --profile",
-    "build_and_start_production_server": "react-scripts build && node startprod.js",
     "start_production_server": "node startprod.js",
-    "start_development_server": "react-scripts start"
+    "start_development_server": "set PORT=3001 && react-scripts start",
+    "build_with_profiling": "react-scripts build \"--profile\""
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -48,5 +47,6 @@
     "react-dom": "^16.12.0",
     "jshint": "^2.11.0"
   },
-  "homepage": "chat/"
+  "homepage": "chat/",
+  "proxy": "http://localhost:3000/"
 }
