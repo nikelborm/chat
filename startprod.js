@@ -12,7 +12,24 @@ const redisStorage = require("connect-redis")(session);
 const redis = require("redis");
 const http = require("http");
 const WebSocket = require("ws"); // jshint ignore:line
+const sendmail = require('sendmail')({silent:true});
+const querystring = require("querystring");
 
+function isAllStrings(body) {
+    let result = 1;
+    for (let prop in body) {
+        result &= typeof body[prop] === "string";
+    }
+    return result;
+}
+function randomString(len) {
+    const chrs = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let str = '';
+    for (let i = 0; i < len; i++) {
+        str += chrs[Math.floor(Math.random() * chrs.length)];
+    }
+    return str;
+}
 function createEmptyResponseData() {
     return {
         report: {
@@ -26,14 +43,10 @@ function validate(mode, body, authInfo) {
     /* body не сам, а только необходимые параметры */
     let resdata = createEmptyResponseData();
     const { userNameOrEmail, password, userName, confirmPassword, fullName, email, room, text } = body;
-    let isRequestCorrect = 1;
-    for (let prop in body) {
-        isRequestCorrect &= typeof body[prop] === "string";
-    }
     let info = "";
     let errorField = "";
 
-    if (!isRequestCorrect) {
+    if (!isAllStrings(body)) {
         resdata.report.info = "Неправильно составлен запрос";
         return resdata;
     }
@@ -231,6 +244,9 @@ app.post("/canIlogin", function (request, response) {
         } else if (result.password !== sha256(password)) {
             resdata.reply.errorField = "passwordLogin";
             rp.info = "Неверный пароль";
+        } else if (result.emailConfirmed) {
+            resdata.reply.errorField = "userNameOrEmail";
+            rp.info = "Вы всё ещё не перешли по ссылке из письма (Если у вас gmail, то вы его не дождётесь, обращайтесь к администратору, либо пересоздавайте учётку с прежними данными, но с другой почтой). Почта не подтверждена.";
         }
         if (rp.info) return;
 
@@ -243,6 +259,27 @@ app.post("/canIlogin", function (request, response) {
         rp.info = err.message;
     }).finally(() => {
         response.json(resdata);
+    });
+});
+app.get("/finishRegistration", function (request, response) {
+    const { token, email } = request.query;
+    if (!isAllStrings({ token, email })) {
+        return response.redirect("/");
+    }
+    let page = "/";
+    users.findOne({ email })
+    .then((result) => {
+        if (result.token === token) {
+            request.session.authInfo = result;
+            fillCookies(response, result, "userName", "fullName", "statusText", "avatarLink");
+            notifyAboutNewPersonInChat(result, "global");
+            page = "/chat";
+            return users.updateOne({_id : result._id}, {$set: {token : randomString(14), emailConfirmed: true}});
+        }
+    }).catch((err) => {
+        console.log(err);
+    }).finally(() => {
+        response.redirect(page);
     });
 });
 app.post("/canIregister", function (request, response) {
@@ -264,24 +301,36 @@ app.post("/canIregister", function (request, response) {
                 regDate: new Date(Date.now()),
                 statusText: "Тут был статус",
                 avatarLink: "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif", // Это временно
-                rooms: ["global"]
+                rooms: ["global"],
+                token: randomString(14),
+                emailConfirmed: false
             };
             return users.insertOne(userProfile); // Возвращаем промис
         }
-        if (result.userName === userName) {
-            resdata.reply.errorField = "userName";
-            rp.info = "Этот никнейм занят.";
-        } else if (result.email === email) {
-            resdata.reply.errorField = "email";
-            rp.info = "Эта почта занята.";
+        if (result.emailConfirmed) {
+            if (result.userName === userName) {
+                resdata.reply.errorField = "userName";
+                rp.info = "Этот никнейм занят.";
+            } else {
+                // (result.email === email)
+                resdata.reply.errorField = "email";
+                rp.info = "Эта почта занята.";
+            }
+            rp.info += " Если вы владелец, попробуйте <a href='/restore' style='color: #FFFFFF;'>восстановить аккаунт</a>.";
         }
-        rp.info += " Если вы владелец, попробуйте <a href='/restore' style='color: #FFFFFF;'>восстановить аккаунт</a>.";
     }).then((result) => {
         if (rp.info) return;
-        const data = result.ops[0];
-        request.session.authInfo = resdata.reply = data;
-        fillCookies(response, data, "userName", "fullName", "statusText", "avatarLink");
-        notifyAboutNewPersonInChat(data, "global");
+        const { token, email } = result.ops[0];
+        // TODO: Настроить почтовый сервер, DNS, MX записи, а также SPF, DKIM, DMARC
+        // И всё ради того, чтобы гугл блять не ругался и принимал почту
+        sendmail({
+            from: 'robot <noreply@nikel.herokuapp.com>',
+            to: email,
+            subject: 'Завершение регистрации',
+            html: `<h2><a href="https://nikel.herokuapp.com/finishRegistration?${ querystring.stringify({email, token})}">Чтобы завершить регистрацию, перейдите по ссылке</a></h2> `
+        }, function(err, reply) {
+            if (err) throw err;
+        });
         rp.isError = false;
         rp.info = "Регистрация успешна";
     }).catch((err) => {
