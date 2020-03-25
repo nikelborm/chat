@@ -270,11 +270,12 @@ app.get("/finishRegistration", function (request, response) {
     users.findOne({ email })
     .then((result) => {
         if (result.token === token) {
+            result.rooms = ["global"];
             request.session.authInfo = result;
             fillCookies(response, result, "userName", "fullName", "statusText", "avatarLink");
             notifyAboutNewPersonInChat(result, "global");
             page = "/chat";
-            return users.updateOne({_id : result._id}, {$set: {token : randomString(14), emailConfirmed: true}});
+            return users.updateOne({_id : result._id}, {$addToSet: {rooms: "global"}, $set: {token : randomString(14), emailConfirmed: true}});
         }
     }).catch((err) => {
         console.log(err);
@@ -301,7 +302,7 @@ app.post("/canIregister", function (request, response) {
                 regDate: new Date(Date.now()),
                 statusText: "Тут был статус",
                 avatarLink: "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif", // Это временно
-                rooms: ["global"],
+                rooms: [],
                 token: randomString(14),
                 emailConfirmed: false
             };
@@ -323,6 +324,7 @@ app.post("/canIregister", function (request, response) {
         const { token, email } = result.ops[0];
         // TODO: Настроить почтовый сервер, DNS, MX записи, а также SPF, DKIM, DMARC
         // И всё ради того, чтобы гугл блять не ругался и принимал почту
+        // Тут иногда появляется фантомный баг и символ точки исчезает из адреса в html
         sendmail({
             from: 'robot <noreply@nikel.herokuapp.com>',
             to: email,
