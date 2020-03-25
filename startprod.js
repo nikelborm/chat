@@ -8,11 +8,11 @@ const sha256 = require("sha256");
 const bodyParser = require("body-parser");
 const cookie = require("cookie");
 const cookieParser = require("cookie-parser");
-const redisStorage = require("connect-redis")(session);
+const RedisStorage = require("connect-redis")(session);
 const redis = require("redis");
 const http = require("http");
 const WebSocket = require("ws"); // jshint ignore:line
-const sendmail = require('sendmail')({silent:true});
+const sendmail = require("sendmail")({silent:true});
 const querystring = require("querystring");
 
 function isAllStrings(body) {
@@ -23,8 +23,8 @@ function isAllStrings(body) {
     return result;
 }
 function randomString(len) {
-    const chrs = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let str = '';
+    const chrs = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let str = "";
     for (let i = 0; i < len; i++) {
         str += chrs[Math.floor(Math.random() * chrs.length)];
     }
@@ -79,7 +79,7 @@ function validate(mode, body, authInfo) {
             info = "Вы не авторизованы";
         } else {
             let { rooms } = authInfo;
-            if (!rooms[rooms instanceof Set ? 'has': 'includes'](room)) {
+            if (!rooms[rooms instanceof Set ? "has": "includes"](room)) {
                 info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
             }
         }
@@ -146,9 +146,7 @@ function redirectIfNecessary(target, request, response) {
 }
 function fillCookies(response, dataObj, ...params) {
     for (const param of params) {
-        if(dataObj[param] !== undefined) {
-            response.cookie(param, dataObj[param]);
-        }
+        response.cookie(param, dataObj[param]);
     }
 }
 function clearCookies(response, ...params) {
@@ -186,7 +184,7 @@ let messages;
 let activeUsersCounter = {};
 
 const app = express();
-const store = new redisStorage({
+const store = new RedisStorage({
     client: redis.createClient(redisLink)
 });
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -284,7 +282,6 @@ app.get("/finishRegistration", function (request, response) {
     });
 });
 app.post("/canIregister", function (request, response) {
-    // TODO: Добавить проверку почты через присылание письма
     const { userName, password, confirmPassword, fullName, email } = request.body;
     let resdata = validate("register", { userName, password, confirmPassword, fullName, email });
     let rp = resdata.report;
@@ -300,7 +297,7 @@ app.post("/canIregister", function (request, response) {
                 email,
                 fullName,
                 regDate: new Date(Date.now()),
-                statusText: "Тут был статус",
+                statusText: "В сети",
                 avatarLink: "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif", // Это временно
                 rooms: [],
                 token: randomString(14),
@@ -326,9 +323,9 @@ app.post("/canIregister", function (request, response) {
         // И всё ради того, чтобы гугл блять не ругался и принимал почту
         // Тут иногда появляется фантомный баг и символ точки исчезает из адреса в html
         sendmail({
-            from: 'robot <noreply@nikel.herokuapp.com>',
+            from: "robot <noreply@nikel.herokuapp.com>",
             to: email,
-            subject: 'Завершение регистрации',
+            subject: "Завершение регистрации",
             html: `<h2><a href="https://nikel.herokuapp.com/finishRegistration?${ querystring.stringify({email, token})}">Чтобы завершить регистрацию, перейдите по ссылке</a></h2> `
         }, function(err, reply) {
             if (err) throw err;
@@ -411,9 +408,8 @@ WSServer.on("connection", (connection, request) => {
     const cookies = cookie.parse(request.headers.cookie);
     const sid = cookieParser.signedCookie(cookies["connect.sid"], secretKey);
     store.get(sid, (err, session) => {
-        if (err) {
-            console.log(err);
-        }
+        if (err) console.log(err);
+
         if (!session || !session.authInfo || err) {
             let resdata = createEmptyResponseData();
             resdata.report = "Вы не авторизованы!";
@@ -485,9 +481,8 @@ const mongoClient = new mongodb.MongoClient(mongoLink, {
     useUnifiedTopology: true
 });
 mongoClient.connect(function (err, client) {
-    if (err) {
-        return console.log(err);
-    }
+    if (err) return console.log(err);
+
     dbClient = client;
     users = client.db().collection("users");
     messages = client.db().collection("messages");

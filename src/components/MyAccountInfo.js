@@ -1,7 +1,7 @@
 /* eslint-disable no-useless-concat */
 import React, { PureComponent } from "react";
 import getCookie from "./getCookie";
-import emptyAvatar from '../styles/white.jpg';
+import emptyAvatar from "../styles/white.jpg";
 
 class MyAccountInfo extends PureComponent {
     render() {
