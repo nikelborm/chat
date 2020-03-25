@@ -3,7 +3,8 @@ import Message from "./Message";
 import getCookie from "./getCookie";
 class MessagesList extends Component {
     shouldComponentUpdate(nextProps, nextState) {
-        return !nextProps.isLoading && this.props.msgList.length !== nextProps.msgList.length;
+        return this.props.msgList.length !== nextProps.msgList.length ||
+        nextProps.isLoading !== this.props.isLoading;
         // TODO: Как добавлю редактирование сообщений, прокачать это
     }
     constructor(props) {
