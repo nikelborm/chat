@@ -244,7 +244,7 @@ app.post("/canIlogin", function (request, response) {
         } else if (result.password !== sha256(password)) {
             resdata.reply.errorField = "passwordLogin";
             rp.info = "Неверный пароль";
-        } else if (result.emailConfirmed) {
+        } else if (!result.emailConfirmed) {
             resdata.reply.errorField = "userNameOrEmail";
             rp.info = "Вы всё ещё не перешли по ссылке из письма (Если у вас gmail, то вы его не дождётесь, обращайтесь к администратору, либо пересоздавайте учётку с прежними данными, но с другой почтой). Почта не подтверждена.";
         }
