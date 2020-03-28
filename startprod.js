@@ -50,6 +50,18 @@ function validate(mode, body, authInfo) {
         resdata.report.info = "Неправильно составлен запрос";
         return resdata;
     }
+    if (mode === "register") {
+        if (password.length < 8) {
+            info = "Длина пароля должна быть от 8 символов";
+            errorField = "passwordRegister";
+        } else if (password.length > 40) {
+            info = "Длина пароля должна быть до 40 символов";
+            errorField = "passwordRegister";
+        } else if (confirmPassword !== password) {
+            info = "Пароли не совпадают";
+            errorField = "confirmPassword";
+        }
+    }
     switch ("") {
         case userNameOrEmail:
             info = "Вы не ввели никнейм или почту";
@@ -82,25 +94,6 @@ function validate(mode, body, authInfo) {
             if (!rooms[rooms instanceof Set ? "has": "includes"](room)) {
                 info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
             }
-        }
-    }
-    if (info) {
-        if (errorField) {
-            resdata.reply.errorField = errorField;
-        }
-        resdata.report.info = info;
-        return resdata;
-    }
-    if (mode === "register") {
-        if (password.length < 8) {
-            info = "Длина пароля должна быть от 8 символов";
-            errorField = "passwordRegister";
-        } else if (password.length > 40) {
-            info = "Длина пароля должна быть до 40 символов";
-            errorField = "passwordRegister";
-        } else if (confirmPassword !== password) {
-            info = "Пароли не совпадают";
-            errorField = "confirmPassword";
         }
     }
 
@@ -244,7 +237,7 @@ app.post("/canIlogin", function (request, response) {
             rp.info = "Неверный пароль";
         } else if (!result.emailConfirmed) {
             resdata.reply.errorField = "userNameOrEmail";
-            rp.info = "Вы всё ещё не перешли по ссылке из письма (Если у вас gmail, то вы его не дождётесь, обращайтесь к администратору, либо пересоздавайте учётку с прежними данными, но с другой почтой). Почта не подтверждена.";
+            rp.info = "Вы не перешли по ссылке из письма (не подтвердили почту). Если письма нет даже в папке спам, то обращайтесь к администратору.";
         }
         if (rp.info) return;
 
