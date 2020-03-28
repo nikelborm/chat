@@ -483,11 +483,12 @@ mongoClient.connect(function (err, client) {
         console.log("Сервер слушает");
     });
 });
-process.on("SIGINT", () => {
-    // На самом деле я не думаю, что это всерьёз будет работать
-    WSServer.close(() => {
-        console.log("Все WebSocket соединения успешно завершены");
+['SIGINT', 'SIGTERM'].forEach(function(sig) {
+    process.on(sig, function() {
+        WSServer.close(() => {
+            console.log("Все WebSocket соединения успешно завершены");
+        });
+        dbClient.close();
+        process.exit();
     });
-    dbClient.close();
-    process.exit();
 });
