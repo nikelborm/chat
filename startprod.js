@@ -194,11 +194,6 @@ app.use(session({
 app.use(cookieParser(secretKey));
 app.use(favicon(__dirname + "/build/favicon.ico"));
 
-// Если человек сам зашёл на логин или его редиректнуло, идёт проверка авторизован ли он, если да то его редиректит на / то есть чат, если нет, то ему выкидывается страница логина
-// Вместе с страницей логина делаются доступными все файлы в нужной директории
-// Если человек сам зашёл на чат или его редиректнуло, так же идёт проверка авторизован ли он, если да то он остаётся тут, иначе его редиректит на логин
-// Становятся доступными все файлы в директории чата
-
 // TODO: Сделать проверку есть ли пользователь (хранящийся в сессии) в базе в этих пунктах (на случай если была авторизация на нескольких устройствах, а акк удалён из базы):
 //   /
 //   /chat
@@ -253,20 +248,27 @@ app.post("/canIlogin", function (request, response) {
     });
 });
 app.get("/finishRegistration", function (request, response) {
-    const { token, email } = request.query;
-    if (!isAllStrings({ token, email })) {
+    const { secureToken, id } = request.query;
+    if (!isAllStrings({ secureToken, id })) {
         return response.redirect("/");
     }
+    const _id = new mongodb.ObjectID(id);
     let page = "/";
-    users.findOne({ email })
+    users.findOne({ _id })
     .then((result) => {
-        if (result.token === token) {
+        if (result && result.secureToken === secureToken) {
             result.rooms = ["global"];
             request.session.authInfo = result;
             fillCookies(response, result, "userName", "fullName", "statusText", "avatarLink");
             notifyAboutNewPersonInChat(result, "global");
             page = "/chat";
-            return users.updateOne({_id : result._id}, {$addToSet: {rooms: "global"}, $set: {token : randomString(14), emailConfirmed: true}});
+            return users.updateOne( { _id }, {
+                $addToSet: { rooms: "global" },
+                $set: {
+                    secureToken : randomString(32),
+                    emailConfirmed: true
+                }
+            });
         }
     }).catch((err) => {
         console.log(err);
@@ -293,7 +295,7 @@ app.post("/canIregister", function (request, response) {
                 statusText: "В сети",
                 avatarLink: "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif", // Это временно
                 rooms: [],
-                token: randomString(14),
+                secureToken: randomString(32),
                 emailConfirmed: false
             };
             return users.insertOne(userProfile); // Возвращаем промис
@@ -311,15 +313,15 @@ app.post("/canIregister", function (request, response) {
         }
     }).then((result) => {
         if (rp.info) return;
-        const { token, email } = result.ops[0];
+        const { secureToken, email, _id } = result.ops[0];
         // TODO: Настроить почтовый сервер, DNS, MX записи, а также SPF, DKIM, DMARC
         // И всё ради того, чтобы гугл блять не ругался и принимал почту
-        // Тут иногда появляется фантомный баг и символ точки исчезает из адреса в html
+        // Тут иногда появляется фантомный баг и какой-нибудь символ (зачастую точка) исчезает из адреса в html
         sendmail({
             from: "robot <noreply@nikel.herokuapp.com>",
             to: email,
             subject: "Завершение регистрации",
-            html: `<h2><a href="https://nikel.herokuapp.com/finishRegistration?${ querystring.stringify({email, token})}">Чтобы завершить регистрацию, перейдите по ссылке</a></h2> `
+            html: `<h2><a href="https://nikel.herokuapp.com/finishRegistration?${ querystring.stringify({id : _id.toString(), secureToken})}">Чтобы завершить регистрацию, перейдите по ссылке</a></h2> `
         }, function(err, reply) {
             if (err) throw err;
         });
