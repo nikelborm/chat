@@ -1,10 +1,12 @@
 import React, { Component } from "react";
 import InputForm from "./InputForm";
 import MessagesList from "./MessagesList";
-import ParticipantsList from "./ParticipantsList";
 import MyAccountInfo from "./MyAccountInfo";
+import ParticipantsList from "./ParticipantsList";
 import RightTabs from "./RightTabs";
-// import getCookie from "./getCookie";
+import parseMessageTime from './parseMessageTime';
+import parseMessageBody from './parseMessageBody';
+import getCookie from "./getCookie";
 
 // const whyDidYouRender = require("@welldone-software/why-did-you-render");
 // whyDidYouRender(React, {
@@ -17,25 +19,26 @@ class WindowArea extends Component {
         this.cometCreated = false;
         this.isActiveChatHistoryLoaded = false;
         this.isUsersListInRoomDownloaded = false;
+        this.myID = getCookie("myID") || "";
     }
     state = {
-        // myRooms: JSON.parse(getCookie("myRooms")) ,
-        // activeChat: this.myRooms.length === 1 ? this.myRooms[0] : "",
-        activeChat: "global",
-        myRooms: ["global"],
-        knownUsersList: {
+        myRooms: JSON.parse(getCookie("myRooms")) ,
+        activeChat: this.myRooms.length === 1 ? this.myRooms[0] : "",
+        knownUsers: {
             // longHexUserId0000000000000000: {
             //     userName: "eva_tyan",
             //     fullName: "Евангелина Рима",
             //     statusText : "В сети",
             //     avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
             //     onlineStatus: "online",
-            //     rooms: ["global"] // Не все его комнаты, а только пересекающиеся
+            //     rooms: ["global"] // Не все его комнаты, а только пересекающиеся cо мной
             // }
         },
         roomsInfo : {
             // global: {
-            //     isDownloaded: false,
+            //     isHidden: true,
+            //     isUsersDownloaded: false,
+            //     isHistoryDownloaded: false,
             //     isDirect: false,
             //     isMuted: false
             // }
@@ -43,15 +46,16 @@ class WindowArea extends Component {
         chatsHistory: {
             // global: {
             //     longHexMessageId0000000000000000: {
-            //         author_info : {},// Вместо {} ссылка на usersList.longHexUserId0000000000000000
+            //         authorInfo : {},// Вместо {} ссылка на knownUsers.longHexUserId0000000000000000
+            //         authorID: "longHexUserId0000000000000000",
             //         text : ["qwe"], // Распарсенное сообщение
-            //         time : "2020-03-30T21:08:56.855Z"
+            //         time : "12 декабря 08:56" // Распарсенное время
             //     }
             // }
         },
         usersInRooms: {
             // global: {
-            //     longHexUserId0000000000000000: {}// Вместо {} ссылка на usersList.longHexUserId0000000000000000
+            //     longHexUserId0000000000000000: {}// Вместо {} ссылка на knownUsers.longHexUserId0000000000000000
             // }
         }
     };
@@ -61,7 +65,7 @@ class WindowArea extends Component {
         }
         for (const room of this.state.myRooms) {
             this.loader("/loadListOfUsersInChat", "usersInRooms", "isUsersListInRoomDownloaded", room);
-        }
+        } // А надо ли?
     };
     loader = async (path, pasteReplyIn, pasteSuccessIn, room) => {
         let data;
@@ -116,27 +120,42 @@ class WindowArea extends Component {
                     console.log(data.response);
                     break;
                 case "message":
+                    // TODO: Подумать о том, а загружен ли этот чат, чтобы в него что-нибудь вставлять?
                     this.setState((prevState) => {
-                        prevState.chatsHistory[data.room][data.id] = data.message
+                        prevState.chatsHistory[data.room][data.id] = {
+                            author_info : prevState.knownUsers[data.message.authorId],
+                            text : parseMessageBody(data.message.text),
+                            time : parseMessageTime(data.message.time)
+                        }
                         return prevState;
                     });
                     break;
+                case "editMessage":
+                    // TODO: При изменении сообщения, полностью создавать новый обьект сообщения, чтобы shouldComponentUpdate в MessagesList сработал
+                    break;
                 case "isOnline":
                 case "isOffline":
-                    if (this.state.usersList[data.id]) {
+                    if (this.state.knownUsers[data.id]) {
                         this.setState((prevState) => {
                             const status = data.handlerType === "isOnline" ? "online" : "offline";
-                            prevState.usersList[data.id].onlineStatus = status;
+                            prevState.knownUsers[data.id].onlineStatus = status;
                             return prevState;
                         });
                     } else {
+                        // загружать инфу о нём не надо так как, если он не известен, то это значит, что мы ни разу не открыли список с ним и не видели ни одного его сообщения
                         console.log("Новый пользователь, которого мы не знаем");
                     }
                     break;
                 case "newPersonInChat":
-                    if (!this.state.usersInGlobalRoom[data.id]) {
+                    if (this.state.knownUsers[data.id]) {
                         this.setState((prevState) => {
-                            prevState.usersInGlobalRoom[data.id] = data.user;
+                            prevState.knownUsers[data.id].rooms.push(data.room);
+                            prevState.usersInRooms[data.room][data.id] = prevState.knownUsers[data.id];
+                            return prevState;
+                        });
+                    } else {
+                        this.setState((prevState) => {
+                            prevState.knownUsers[data.id] = data.user;
                             return prevState;
                         });
                     }
@@ -163,6 +182,7 @@ class WindowArea extends Component {
         };
     };
     componentDidUpdate = () => {
+        // TODO: Прокачать это условие
         if (this.isActiveChatHistoryLoaded && this.isUsersListInRoomDownloaded && !this.cometCreated) {
             this.createOrRespawnWebSocket();
             this.cometCreated = true;
@@ -177,7 +197,7 @@ class WindowArea extends Component {
             <div className="window-area">
                 <div className="conversation-list">
                     {myRooms.map((chatName) => (
-                        <ParticipantsList key={chatName} usersList={usersInRooms[chatName]} />
+                        <ParticipantsList key={chatName} knownUsers={usersInRooms[chatName]} />
                     ))}
                     <MyAccountInfo />
                 </div>
@@ -187,9 +207,10 @@ class WindowArea extends Component {
                         <i className="fa fa-search"></i>
                     </div>
                     <MessagesList
-                        msgList={activeChat ? chatsHistory[activeChat] : []}
+                        messages={activeChat ? chatsHistory[activeChat] : {}}
                         isLoading={!this.isActiveChatHistoryLoaded}
                         activeChat={activeChat}
+                        myID={this.myID}
                     />
                     <InputForm/>
                 </div>

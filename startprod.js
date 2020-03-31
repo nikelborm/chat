@@ -159,6 +159,8 @@ function notifyAboutNewPersonInChat(authInfo, room) {
     const user = {
         userName: authInfo.userName,
         fullName: authInfo.fullName,
+        statusText : authInfo.statusText,
+        avatarLink : authInfo.avatarLink,
         onlineStatus: activeUsersCounter[id] ? "online" : "offline"
     };
     sendToEveryoneInRoom({handlerType: "newPersonInChat", id, user, room}, room);
@@ -338,6 +340,7 @@ app.post("/canIregister", function (request, response) {
     });
 });
 // TODO: Добавить оповещение всех онлайновых, кто в одном чате о присоединении новичка
+// TODO: Сделать защиту, чтобы имя комнаты не было каким-нибудь ебанутым типа constructor, __proto__ или this
 // app.post("/canIjoinTheRoom", function (request, response) {
 //     let resdata = createEmptyResponseData();
 //     let rp = resdata.report;
