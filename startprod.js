@@ -122,12 +122,12 @@ function sendToEveryoneInRoom(messageBody, room) {
     });
 }
 function onCloseWSconnection(connection) {
-    const { _id } = connection.authInfo;
-    if (activeUsersCounter[_id] === 1) {
-        delete activeUsersCounter[_id];
-        sendToEveryoneKnown({handlerType: "isOffline", _id}, connection.authInfo.rooms);
+    const { _id: id } = connection.authInfo;
+    if (activeUsersCounter[id] === 1) {
+        delete activeUsersCounter[id];
+        sendToEveryoneKnown({handlerType: "isOffline", id}, connection.authInfo.rooms);
     } else {
-        activeUsersCounter[_id]--;
+        activeUsersCounter[id]--;
     }
 }
 function redirectIfNecessary(target, request, response) {
@@ -317,13 +317,17 @@ app.post("/canIregister", function (request, response) {
         // TODO: Настроить почтовый сервер, DNS, MX записи, а также SPF, DKIM, DMARC
         // И всё ради того, чтобы гугл блять не ругался и принимал почту
         // Тут иногда появляется фантомный баг и какой-нибудь символ (зачастую точка) исчезает из адреса в html
+        console.log();
         sendmail({
             from: "robot <noreply@nikel.herokuapp.com>",
             to: email,
             subject: "Завершение регистрации",
             html: `<h2><a href="https://nikel.herokuapp.com/finishRegistration?${ querystring.stringify({id : _id.toString(), secureToken})}">Чтобы завершить регистрацию, перейдите по ссылке</a></h2> `
-        }, function(err, reply) {
-            if (err) throw err;
+        }, (err, reply) => {
+            if (err) {
+                rp.info = err.message;
+                return;
+            }
         });
         rp.isError = false;
         rp.info = "Регистрация успешна";
@@ -411,14 +415,14 @@ WSServer.on("connection", (connection, request) => {
             connection.send(JSON.stringify(resdata));
             connection.terminate();
         } else {
-            const { _id } = connection.authInfo = session.authInfo;
+            const { _id: id } = connection.authInfo = session.authInfo;
             connection.authInfo.rooms = new Set(session.authInfo.rooms);
-            if (!activeUsersCounter[_id]) {
-                activeUsersCounter[_id] = 1;
-                sendToEveryoneKnown({handlerType: "isOnline", _id}, connection.authInfo.rooms);
+            if (!activeUsersCounter[id]) {
+                activeUsersCounter[id] = 1;
+                sendToEveryoneKnown({handlerType: "isOnline", id}, connection.authInfo.rooms);
                 // TODO: Отправить новичку инфу о том кто он?
             } else {
-                activeUsersCounter[_id]++;
+                activeUsersCounter[id]++;
             }
         }
     });
@@ -437,18 +441,20 @@ WSServer.on("connection", (connection, request) => {
         if (rp.info) {
             return connection.send(JSON.stringify({handlerType: "logs", response: resdata}));
         }
-        const message = {
+        let message = {
             room,
-            author: authInfo.userName,
+            authorID: authInfo.userName,
             text,
             time: new Date(Date.now())
         };
         messages.insertOne(message)
         .then((result) => {
+            const id = result.ops[0]._id;
             rp.info = "Сообщение успешно отправлено";
             rp.isError = false;
-            resdata.reply = {id: result.ops[0]._id};
-            sendToEveryoneInRoom({handlerType: "message", message}, room);
+            delete message.room;
+            resdata.reply = { id };
+            sendToEveryoneInRoom({handlerType: "message", id, room, message}, room);
         }).catch((err) => {
             console.log(err);
             rp.info = err.message;
