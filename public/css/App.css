@@ -269,7 +269,11 @@ b{
 	cursor: pointer;
 }
 .input-area > button{
-	background: #a0b4c0;
+	background-repeat: no-repeat;
+	background-image: url(paper-plane-solid.svg);
+	background-color: #e4eaee;
+	background-position: center;
+	width: 20px;
 	border: none;
     letter-spacing:1px;
 	font-weight: bold;
@@ -381,7 +385,7 @@ ul.tabs-container{
 }
 .my-account > .name{
 	color: #fff;
-	font-weight: bold;
+	font-weight: 600;
 	margin-left: 10px;
 	float: left;
 	cursor: pointer;

@@ -1,6 +1,6 @@
 /* eslint-disable no-useless-concat */
 import React, { PureComponent } from "react";
-import getCookie from "./getCookie";
+import getCookie from "../tools/getCookie";
 import emptyAvatar from "../styles/white.jpg";
 
 class MyAccountInfo extends PureComponent {
@@ -14,7 +14,7 @@ class MyAccountInfo extends PureComponent {
                 </div>
                 <div className="name">
                     <span id="myName" title={getCookie("userName") || "Error"}>
-                        {getCookie("fullName") || "Error"}
+                        {getCookie("fullName") || "Error"}{" "}
                     </span>
                     <i className="fa fa-angle-down"></i>
                     <span className="availability">

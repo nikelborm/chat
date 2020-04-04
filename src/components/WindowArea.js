@@ -2,11 +2,12 @@ import React, { Component } from "react";
 import InputForm from "./InputForm";
 import MessagesList from "./MessagesList";
 import MyAccountInfo from "./MyAccountInfo";
-import ParticipantsList from "./ParticipantsList";
+
+import ParticipantManager from "./ParticipantManager";
 import RightTabs from "./RightTabs";
-import parseMessageTime from './parseMessageTime';
-import parseMessageBody from './parseMessageBody';
-import getCookie from "./getCookie";
+import parseMessageTime from '../tools/parseMessageTime';
+import parseMessageBody from '../tools/parseMessageBody';
+import getCookie from "../tools/getCookie";
 
 // const whyDidYouRender = require("@welldone-software/why-did-you-render");
 // whyDidYouRender(React, {
@@ -22,50 +23,64 @@ class WindowArea extends Component {
         this.myID = getCookie("myID") || "";
     }
     state = {
-        myRooms: JSON.parse(getCookie("myRooms")) ,
-        activeChat: this.myRooms.length === 1 ? this.myRooms[0] : "",
+        myRooms: JSON.parse(getCookie("rooms")) ,
+        activeChat: JSON.parse(getCookie("rooms")).length === 1 ? getCookie("rooms").slice(2,-2) : "",
         knownUsers: {
-            // longHexUserId0000000000000000: {
-            //     userName: "eva_tyan",
-            //     fullName: "Евангелина Рима",
-            //     statusText : "В сети",
-            //     avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
-            //     onlineStatus: "online",
-            //     rooms: ["global"] // Не все его комнаты, а только пересекающиеся cо мной
-            // }
+            longHexUserId0000000000000000: {
+                userName: "eva_tyan",
+                fullName: "Евангелина Рима",
+                statusText : "В сети",
+                avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
+                onlineStatus: "online",
+                rooms: ["global"] // Не все его комнаты, а только пересекающиеся cо мной
+            }
         },
         roomsInfo : {
-            // global: {
-            //     isHidden: true,
-            //     isUsersDownloaded: false,
-            //     isHistoryDownloaded: false,
-            //     isDirect: false,
-            //     isMuted: false
-            // }
+            global: {
+                isHidden: true,
+                isUsersDownloaded: false,
+                isHistoryDownloaded: false,
+                isDirect: false,
+                isMuted: false
+            }
         },
         chatsHistory: {
-            // global: {
-            //     longHexMessageId0000000000000000: {
-            //         authorInfo : {},// Вместо {} ссылка на knownUsers.longHexUserId0000000000000000
-            //         authorID: "longHexUserId0000000000000000",
-            //         text : ["qwe"], // Распарсенное сообщение
-            //         time : "12 декабря 08:56" // Распарсенное время
-            //     }
-            // }
+            global: {
+                longHexMessageId0000000000000000: {
+                    authorInfo : {
+                        userName: "eva_tyan",
+                        fullName: "Евангелина Рима",
+                        statusText : "В сети",
+                        avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
+                        onlineStatus: "online",
+                        rooms: ["global"] // Не все его комнаты, а только пересекающиеся cо мной
+                    },// Вместо {} ссылка на knownUsers.longHexUserId0000000000000000
+                    authorID: "longHexUserId0000000000000000",
+                    text : ["qwe"], // Распарсенное сообщение
+                    time : "12 декабря 08:56" // Распарсенное время
+                }
+            }
         },
         usersInRooms: {
-            // global: {
-            //     longHexUserId0000000000000000: {}// Вместо {} ссылка на knownUsers.longHexUserId0000000000000000
-            // }
+            global: {
+                longHexUserId0000000000000000: {
+                    userName: "eva_tyan",
+                    fullName: "Евангелина Рима",
+                    statusText : "В сети",
+                    avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
+                    onlineStatus: "online",
+                    rooms: ["global"] // Не все его комнаты, а только пересекающиеся cо мной
+                }// Вместо {} ссылка на knownUsers.longHexUserId0000000000000000
+            }
         }
     };
     componentDidMount = () => {
-        if (this.state.activeChat) {
-            this.loader("/loadChatHistory", "chatsHistory", "isActiveChatHistoryLoaded", this.state.activeChat);
-        }
-        for (const room of this.state.myRooms) {
-            this.loader("/loadListOfUsersInChat", "usersInRooms", "isUsersListInRoomDownloaded", room);
-        } // А надо ли?
+        // if (this.state.activeChat) {
+        //     this.loader("/loadChatHistory", "chatsHistory", "isActiveChatHistoryLoaded", this.state.activeChat);
+        // }
+        // for (const room of this.state.myRooms) {
+        //     this.loader("/loadListOfUsersInChat", "usersInRooms", "isUsersListInRoomDownloaded", room);
+        // } // А надо ли?
     };
     loader = async (path, pasteReplyIn, pasteSuccessIn, room) => {
         let data;
@@ -100,6 +115,14 @@ class WindowArea extends Component {
             });
         }
     };
+    onSelectChat = () => {
+        // TODO: Загрузка сообщений по конкретному чату
+        // А после добавление их и новой активной комнаты в state
+
+    };
+    onShowUsersInRoom = () => {
+        // TODO: Загрузка пользователей по конкретному чату
+    }
     createOrRespawnWebSocket = () => {
         const loc = document.location;
         const adress = (loc.protocol[4] === "s" ? "wss://": "ws://") + (loc.port === "3001" ? loc.hostname + ":3000" : loc.host);
@@ -109,15 +132,12 @@ class WindowArea extends Component {
             console.log("[open] Соединение установлено");
         };
         window.socket.onmessage = (event) => {
-            console.log("[message] Данные получены с сервера:");
+            console.log("[message] Сервер отправил сообщение. Отчёт: ", event);
             const data = JSON.parse(event.data);
-            console.log("Отчёт:");
-            console.log(event);
-            console.log(data);
+            console.log("[message] Данные: ", data);
             switch (data.handlerType) {
                 case "logs":
-                    console.log("Пришли ответные логи");
-                    console.log(data.response);
+                    console.log("Пришли ответные логи: ", data.response);
                     break;
                 case "message":
                     // TODO: Подумать о том, а загружен ли этот чат, чтобы в него что-нибудь вставлять?
@@ -167,8 +187,7 @@ class WindowArea extends Component {
         };
         window.socket.onclose = (event) => {
             window.isSocketAvailable = false;
-            console.log("[close] Соединение закрыто. Отчёт:");
-            console.log(event);
+            console.log("[close] Соединение закрыто. Отчёт: ", event);
             window.socket = null;
             // this.componentDidMount();
             setTimeout(this.createOrRespawnWebSocket, 3000);
@@ -177,7 +196,7 @@ class WindowArea extends Component {
         window.socket.onerror = function (error) {
             window.socket.close();
             window.isSocketAvailable = false;
-            console.error("[error] Ошибка! Отчёт:");
+            console.error("[error] Ошибка! Отчёт: ");
             console.log(error);
         };
     };
@@ -190,15 +209,15 @@ class WindowArea extends Component {
     };
     render() {
         // TODO: Убрать лишние ререндеры у компонентов
-        // TODO: Сделать чтобы рендерились так чтобы даже людей с одинаковыми никами можно было отличить
-        // А основы авторства составлял уникальный ID ключ
         const {chatsHistory, usersInRooms, myRooms, activeChat} = this.state;
         return (
             <div className="window-area">
                 <div className="conversation-list">
-                    {myRooms.map((chatName) => (
-                        <ParticipantsList key={chatName} knownUsers={usersInRooms[chatName]} />
-                    ))}
+                    <ParticipantManager
+                        usersInRooms={usersInRooms}
+                        myRooms={myRooms}
+                        onShowUsersInRoom={this.onShowUsersInRoom}
+                    />
                     <MyAccountInfo />
                 </div>
                 <div className="chat-area">

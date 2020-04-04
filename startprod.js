@@ -139,7 +139,7 @@ function redirectIfNecessary(target, request, response) {
 }
 function fillCookies(response, dataObj, ...params) {
     for (const param of params) {
-        response.cookie(param, dataObj[param]);
+        response.cookie(param, typeof dataObj[param] === "string" ? dataObj[param] : JSON.stringify( dataObj[param] ));
     }
 }
 function clearCookies(response, ...params) {
@@ -239,7 +239,7 @@ app.post("/canIlogin", function (request, response) {
         if (rp.info) return;
 
         request.session.authInfo = resdata.reply = result;
-        fillCookies(response, result, "userName", "fullName", "statusText", "avatarLink");
+        fillCookies(response, result, "userName", "fullName", "statusText", "avatarLink", "rooms");
         rp.isError = false;
         rp.info = "Успешная авторизация";
     }).catch((err) => {
@@ -261,7 +261,7 @@ app.get("/finishRegistration", function (request, response) {
         if (result && result.secureToken === secureToken) {
             result.rooms = ["global"];
             request.session.authInfo = result;
-            fillCookies(response, result, "userName", "fullName", "statusText", "avatarLink");
+            fillCookies(response, result, "userName", "fullName", "statusText", "avatarLink", "rooms");
             notifyAboutNewPersonInChat(result, "global");
             page = "/chat";
             return users.updateOne( { _id }, {

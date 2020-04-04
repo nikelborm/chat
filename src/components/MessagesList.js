@@ -1,6 +1,6 @@
 import React, { Component, createRef } from "react";
 import Message from "./Message";
-import shallowEqual from "fbjs/lib/shallowEqual";
+import shallowEqual from "../tools/shallowEqual";
 
 class MessagesList extends Component {
     constructor(props) {

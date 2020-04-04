@@ -1,6 +1,6 @@
 import React, { PureComponent } from "react";
 import Tippy from "@tippy.js/react";
-import createEmojiToolTipBody from "./createEmojiToolTipBody";
+import createEmojiToolTipBody from "../tools/createEmojiToolTipBody";
 
 import "tippy.js/dist/tippy.css";
 import "tippy.js/themes/light.css";
@@ -15,13 +15,17 @@ class InputForm extends PureComponent {
     }
     sendMsgInChat = (e) => {
         e.preventDefault();
-        this.instanceRef.current.hide();
-        const data = {
-            room: "global",
-            text: this.inputArea.current.value
-        };
-        this.inputArea.current.value = "";
-        window.socket.send(JSON.stringify(data));
+        if (window.isSocketAvailable) {
+            this.instanceRef.current.hide();
+            const data = {
+                room: "global",
+                text: this.inputArea.current.value
+            };
+            this.inputArea.current.value = "";
+            window.socket.send(JSON.stringify(data));
+        } else {
+            // TODO: Добавить Tippy с выводом, что соединение потеряно
+        }
     };
     chooseEmoji = (emoji) => {
         this.inputArea.current.value += emoji;
@@ -46,7 +50,7 @@ class InputForm extends PureComponent {
                     </Tippy>
                     <i className="fa fa-paperclip"></i>
                 </div>
-                <button onClick={this.sendMsgInChat} className="send-btn">{">"}</button>
+                <button onClick={this.sendMsgInChat}></button>
             </form>
         );
     }

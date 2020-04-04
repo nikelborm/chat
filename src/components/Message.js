@@ -10,7 +10,7 @@ class Message extends Component {
         const { authorID, authorInfo, correctTime, messageBody, myID } = this.props;
         // TODO: Сделать чтобы имена пользователя и сообщения можно было редактировать
         // В принципе компонент уже готов к этому (Реализуется на сервере)
-        // TODO: Сделать так, чтобы при наведении на .name выводилась Tippy с инфой о пользователе
+        // TODO: Сделать так, чтобы при наведении на div.name выводилась Tippy с инфой о пользователе
         return (
             <li className={(authorID === myID) ? "me" : ""}>
                 <div className="name">
