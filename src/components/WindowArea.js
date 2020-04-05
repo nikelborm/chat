@@ -23,8 +23,10 @@ class WindowArea extends Component {
         this.myID = getCookie("myID") || "";
     }
     state = {
-        myRooms: JSON.parse(getCookie("rooms")) ,
-        activeChat: JSON.parse(getCookie("rooms")).length === 1 ? getCookie("rooms").slice(2,-2) : "",
+        // myRooms: JSON.parse(getCookie("rooms")) ,
+        // activeChat: JSON.parse(getCookie("rooms")).length === 1 ? getCookie("rooms").slice(2,-2) : "",
+        myRooms: ["global", "kolya_kun"],
+        activeChat: "",
         knownUsers: {
             longHexUserId0000000000000000: {
                 userName: "eva_tyan",
@@ -32,22 +34,43 @@ class WindowArea extends Component {
                 statusText : "В сети",
                 avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
                 onlineStatus: "online",
-                rooms: ["global"] // Не все его комнаты, а только пересекающиеся cо мной
+                rooms: ["global", "kolya_kun"] // Не все его комнаты, а только пересекающиеся cо мной
+            },
+            longHexUserId0000000000000001: {
+                userName: "kolya_kun",
+                fullName: "Коля",
+                statusText : "В сети",
+                avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
+                onlineStatus: "online",
+                rooms: ["global", "eva_tyan"] // Не все его комнаты, а только пересекающиеся cо мной
             }
         },
         roomsInfo : {
             global: {
-                isHidden: true,
+                isExpanded: false,
                 isUsersDownloaded: false,
                 isHistoryDownloaded: false,
                 isDirect: false,
                 isMuted: false
+            },
+            kolya_kun: {
+                isDirect: true,
+                isMuted: false,
+                userID: "longHexUserId0000000000000001",
+                userInfo: {
+                    userName: "kolya_kun",
+                    fullName: "Коля",
+                    statusText : "В сети",
+                    avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
+                    onlineStatus: "online",
+                    rooms: ["global"] // Не все его комнаты, а только пересекающиеся cо мной
+                } // Ссылка на пользователя в knownUsers
             }
         },
         chatsHistory: {
             global: {
                 longHexMessageId0000000000000000: {
-                    authorInfo : {
+                    userInfo : {
                         userName: "eva_tyan",
                         fullName: "Евангелина Рима",
                         statusText : "В сети",
@@ -55,7 +78,7 @@ class WindowArea extends Component {
                         onlineStatus: "online",
                         rooms: ["global"] // Не все его комнаты, а только пересекающиеся cо мной
                     },// Вместо {} ссылка на knownUsers.longHexUserId0000000000000000
-                    authorID: "longHexUserId0000000000000000",
+                    userID: "longHexUserId0000000000000000",
                     text : ["qwe"], // Распарсенное сообщение
                     time : "12 декабря 08:56" // Распарсенное время
                 }
@@ -120,9 +143,27 @@ class WindowArea extends Component {
         // А после добавление их и новой активной комнаты в state
 
     };
-    onShowUsersInRoom = () => {
+    onExpandChange = (room) => {
+        console.log('onExpandChange: ', room);
         // TODO: Загрузка пользователей по конкретному чату
-    }
+        // isExpanded
+        this.setState((prevState) => {
+            prevState.roomsInfo[room].isExpanded = !prevState.roomsInfo[room].isExpanded;
+            return prevState;
+        });
+    };
+    onMuteChange = (room) => {
+        console.log('onMuteChange: ', room);
+        // TODO: Загрузка пользователей по конкретному чату
+        // isMuted
+        this.setState((prevState) => {
+            prevState.roomsInfo[room].isMuted = !prevState.roomsInfo[room].isMuted;
+            return prevState;
+        });
+    };
+    onDeleteChat = (room) => {
+        console.log('onDeleteChat: ', room);
+    };
     createOrRespawnWebSocket = () => {
         const loc = document.location;
         const adress = (loc.protocol[4] === "s" ? "wss://": "ws://") + (loc.port === "3001" ? loc.hostname + ":3000" : loc.host);
@@ -209,14 +250,17 @@ class WindowArea extends Component {
     };
     render() {
         // TODO: Убрать лишние ререндеры у компонентов
-        const {chatsHistory, usersInRooms, myRooms, activeChat} = this.state;
+        const {chatsHistory, usersInRooms, myRooms, activeChat, roomsInfo} = this.state;
         return (
             <div className="window-area">
                 <div className="conversation-list">
                     <ParticipantManager
                         usersInRooms={usersInRooms}
                         myRooms={myRooms}
-                        onShowUsersInRoom={this.onShowUsersInRoom}
+                        roomsInfo={roomsInfo}
+                        onExpandChange={this.onExpandChange}
+                        onMuteChange={this.onMuteChange}
+                        onDeleteChat={this.onDeleteChat}
                     />
                     <MyAccountInfo />
                 </div>

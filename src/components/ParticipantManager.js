@@ -1,25 +1,57 @@
-/* eslint-disable jsx-a11y/anchor-is-valid */
 import React, { Component } from "react";
 import ParticipantsList from "./ParticipantsList";
+import Participant from './Participant';
+
 class ParticipantManager extends Component {
     render() {
-        const { myRooms, usersInRooms, onShowUsersInRoom } = this.props
-        const participants = myRooms.map((chatName) => (
-            <ParticipantsList
-            key={chatName}
-            knownUsers={usersInRooms[chatName]}
-            onShowUsersInRoom={onShowUsersInRoom}
-            />
-        ));
+        const { myRooms, usersInRooms, roomsInfo, onMuteChange, onExpandChange, onDeleteChat } = this.props;
+        let directChats = [];
+        let roomsParticipants = [];
+
+        for (const chatName of myRooms) {
+            if (roomsInfo[chatName].isDirect) {
+                directChats.push(
+                    <Participant
+                        key={roomsInfo[chatName].userId}
+                        isDirect={true}
+                        isMuted={roomsInfo[chatName].isMuted}
+                        userInfo={roomsInfo[chatName].userInfo}
+                        onMuteChange={onMuteChange}
+                        onDeleteChat={onDeleteChat}
+                    />
+                );
+            } else {
+                roomsParticipants.push(
+                    <ParticipantsList
+                        key={chatName}
+                        room={chatName}
+                        usersInSpecificRoom={usersInRooms[chatName]}
+                        specificRoomInfo={roomsInfo[chatName]}
+                        onExpandChange={onExpandChange}
+                        onMuteChange={onMuteChange}
+                        onDeleteChat={onDeleteChat}
+                    />
+                );
+            }
+        }
         return (
             <ul>
-                <li className="item active">
-                    <a href="#">
+                { directChats.length
+                    ? <li className="item active">
                         <i className="fa fa-list-alt"></i>
-                        <span>Участники</span>
-                    </a>
-                </li>
-                {participants}
+                        <span>Прямые чаты</span>
+                    </li>
+                    : ""
+                }
+                {directChats}
+                { roomsParticipants.length
+                    ? <li className="item active">
+                        <i className="fa fa-list-alt"></i>
+                        <span>Комнаты</span>
+                    </li>
+                    : ""
+                }
+                {roomsParticipants}
             </ul>
         )
     }

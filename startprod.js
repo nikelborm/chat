@@ -484,6 +484,7 @@ const mongoClient = new mongodb.MongoClient(mongoLink, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 });
+// TODO: Должна быть третья коллекция с комнатами
 mongoClient.connect(function (err, client) {
     if (err) return console.log(err);
 

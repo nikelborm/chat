@@ -122,32 +122,62 @@ b{
 	top: 0;
 	bottom: 0;
 }
-.conversation-list ul li a{
-	padding: 10.6px 15px;
+.item {
+	padding: 10px 0 10px 7px;
 	color: #d2d7e1;
 	text-decoration: none;
 	display: block;
 	position: relative;
 	border-bottom: 2px solid #586476;
 }
-.conversation-list ul li a:hover,
-.conversation-list ul li.active a{
+.tabbed.item{
+	padding-left: 20px;
+}
+.item:hover,
+.item.active {
 	background: #445166;
 	color: #fff;
 }
-.conversation-list ul li a i{
+.item i{
 	color: #79889d;
 	font-size: 1.2em;
 }
-.conversation-list ul li a span{
+.item span{
 	display: inline-block;
 	margin-left: 14px;
 }
-.conversation-list ul li a i.fa-times{
+.item i.fa-trash-alt{
 	position: absolute;
 	top: 12px;
-	right:21px;
+	right: 7px;
 	font-size: 10px;
+}
+.item i.fa-angle-down{
+	position: absolute;
+	top: 11px;
+	right: 41px;
+	font-size: 16px;
+	font-weight: bold;
+}
+.item i.fa-bell,
+.item i.fa-bell-slash {
+	position: absolute;
+	top: 11px;
+}
+.item i.fa-bell {
+	right: 23px;
+	font-size: 14px;
+}
+.item i.fa-bell-slash {
+	right: 20px;
+	font-size: 14px;
+}
+.reversed {
+	transform: rotate(180deg);
+}
+.hidden {
+	height: 0;
+    overflow: hidden;
 }
 .conversation-list .online{
 	color: #82cf85;
@@ -389,6 +419,9 @@ ul.tabs-container{
 	margin-left: 10px;
 	float: left;
 	cursor: pointer;
+}
+.my-account > .name > i{
+	font-weight: bold;
 }
 .my-account > .name .availability{
 	display: block;
