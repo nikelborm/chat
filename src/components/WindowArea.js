@@ -4,7 +4,7 @@ import MessagesList from "./MessagesList";
 import MyAccountInfo from "./MyAccountInfo";
 
 import ParticipantManager from "./ParticipantManager";
-import RightTabs from "./RightTabs";
+import RightTabs from "../layout/RightTabs";
 import parseMessageTime from '../tools/parseMessageTime';
 import parseMessageBody from '../tools/parseMessageBody';
 import getCookie from "../tools/getCookie";

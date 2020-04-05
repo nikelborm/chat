@@ -4,6 +4,10 @@ import getCookie from "../tools/getCookie";
 import emptyAvatar from "../styles/white.jpg";
 
 class MyAccountInfo extends PureComponent {
+    shouldComponentUpdate() {
+        return false;
+        // TODO: Как только добавится возможность редактировать свои данные, обновить это
+    }
     render() {
         return (
             <div className="my-account">

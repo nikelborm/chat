@@ -1,8 +1,11 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
-import React, { PureComponent } from "react";
+import React, { Component } from "react";
 import TabsContainer from "./TabsContainer";
 // TODO: Сделать нормальные рабочие вкладки и пункты меню
-class RightTabs extends PureComponent {
+class RightTabs extends Component {
+    shouldComponentUpdate() {
+        return false;
+    }
     render() {
         return (
             <div className="right-tabs">

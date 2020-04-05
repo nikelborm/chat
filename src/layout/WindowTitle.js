@@ -1,5 +1,8 @@
-import React, { PureComponent } from "react";
-class WindowTitle extends PureComponent {
+import React, { Component } from "react";
+class WindowTitle extends Component {
+    shouldComponentUpdate() {
+        return false;
+    }
     render() {
         return (
             <div className="window-title">

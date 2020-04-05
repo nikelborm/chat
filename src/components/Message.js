@@ -4,7 +4,8 @@ import shallowEqual from "../tools/shallowEqual";
 class Message extends Component {
     shouldComponentUpdate(nextProps) {
         // Если ссылки на сообщения разные
-        return !shallowEqual(this.props.userInfo, nextProps.userInfo) || this.props.messageBody !== nextProps.messageBody;
+        return !shallowEqual(this.props.userInfo, nextProps.userInfo) ||
+        this.props.messageBody !== nextProps.messageBody;
         // TODO: Сравнивать также параметры authorInfo и менять их если допустим чел только что сменил userName
     }
     render() {

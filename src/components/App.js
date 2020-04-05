@@ -1,6 +1,6 @@
 import React, { Fragment } from "react";
 import WindowArea from "./WindowArea";
-import WindowTitle from "./WindowTitle";
+import WindowTitle from "../layout/WindowTitle";
 function App() {
     return (
         <Fragment>
