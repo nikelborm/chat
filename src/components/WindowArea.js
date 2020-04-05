@@ -18,7 +18,7 @@ class WindowArea extends Component {
     constructor(props) {
         super(props);
         this.cometCreated = false;
-        this.isActiveChatHistoryLoaded = false;
+        this.isActiveChatHistoryLoaded = true;
         this.isUsersListInRoomDownloaded = false;
         this.myID = getCookie("myID") || "";
     }
@@ -26,7 +26,7 @@ class WindowArea extends Component {
         // myRooms: JSON.parse(getCookie("rooms")) ,
         // activeChat: JSON.parse(getCookie("rooms")).length === 1 ? getCookie("rooms").slice(2,-2) : "",
         myRooms: ["global", "kolya_kun"],
-        activeChat: "",
+        activeChat: "global",
         knownUsers: {
             longHexUserId0000000000000000: {
                 userName: "eva_tyan",
@@ -49,7 +49,7 @@ class WindowArea extends Component {
             global: {
                 isExpanded: false,
                 isUsersDownloaded: false,
-                isHistoryDownloaded: false,
+                isHistoryDownloaded: true,
                 isDirect: false,
                 isMuted: false
             },
@@ -79,8 +79,8 @@ class WindowArea extends Component {
                         rooms: ["global"] // Не все его комнаты, а только пересекающиеся cо мной
                     },// Вместо {} ссылка на knownUsers.longHexUserId0000000000000000
                     userID: "longHexUserId0000000000000000",
-                    text : ["qwe"], // Распарсенное сообщение
-                    time : "12 декабря 08:56" // Распарсенное время
+                    messageBody : ["qwe"], // Распарсенное сообщение text
+                    correctTime : "12 декабря 08:56" // Распарсенное время time
                 }
             }
         },

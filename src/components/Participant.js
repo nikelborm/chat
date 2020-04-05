@@ -2,9 +2,10 @@ import React, { Component } from "react";
 import shallowEqual from "../tools/shallowEqual";
 
 class Participant extends Component {
-    // shouldComponentUpdate(nextProps) {
-    //     shallowEqual(this.props.userInfo, nextProps.userInfo);
-    // }
+    shouldComponentUpdate(nextProps) {
+        return !shallowEqual(this.props.userInfo, nextProps.userInfo) ||
+        this.props.isMuted !== nextProps.isMuted;
+    }
     render() {
         const { userName, fullName, onlineStatus } = this.props.userInfo;
         const { isDirect, isMuted, onMuteChange, onDeleteChat } = this.props;

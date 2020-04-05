@@ -41,8 +41,8 @@ class MessagesList extends Component {
                 <Message
                     key={msgId}
                     myID={myID}
-                    authorID={messages[msgId].authorID}
-                    authorInfo={messages[msgId].authorInfo}
+                    userID={messages[msgId].userID}
+                    userInfo={messages[msgId].userInfo}
                     messageBody={messages[msgId].messageBody}
                     correctTime={messages[msgId].correctTime}
                 />

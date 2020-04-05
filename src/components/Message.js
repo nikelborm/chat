@@ -1,21 +1,22 @@
 import React, { Component } from "react";
+import shallowEqual from "../tools/shallowEqual";
 
 class Message extends Component {
     shouldComponentUpdate(nextProps) {
         // Если ссылки на сообщения разные
-        return this.props.messageBody === nextProps.messageBody;
+        return !shallowEqual(this.props.userInfo, nextProps.userInfo) || this.props.messageBody !== nextProps.messageBody;
         // TODO: Сравнивать также параметры authorInfo и менять их если допустим чел только что сменил userName
     }
     render() {
-        const { authorID, authorInfo, correctTime, messageBody, myID } = this.props;
+        const { userID, userInfo, correctTime, messageBody, myID } = this.props;
         // TODO: Сделать чтобы имена пользователя и сообщения можно было редактировать
         // В принципе компонент уже готов к этому (Реализуется на сервере)
         // TODO: Сделать так, чтобы при наведении на div.name выводилась Tippy с инфой о пользователе
         return (
-            <li className={(authorID === myID) ? "me" : ""}>
+            <li className={(userID === myID) ? "me" : ""}>
                 <div className="name">
                     <span className="">
-                        {authorInfo.userName}
+                        {userInfo.userName}
                     </span>
                 </div>
                 <div className="message">
