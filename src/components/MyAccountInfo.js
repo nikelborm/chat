@@ -1,18 +1,19 @@
 /* eslint-disable no-useless-concat */
-import React, { PureComponent } from "react";
+import React, { Component } from "react";
 import getCookie from "../tools/getCookie";
 import emptyAvatar from "../styles/white.jpg";
 
-class MyAccountInfo extends PureComponent {
+class MyAccountInfo extends Component {
     shouldComponentUpdate() {
         return false;
-        // TODO: Как только добавится возможность редактировать свои данные, обновить это
+        // TODO: Как только добавится возможность редактировать свои данные, обновить это и изменить на PureComponent
     }
     render() {
         return (
             <div className="my-account">
                 <div className="image">
                     <img src={getCookie("avatarLink") || emptyAvatar} title="Аватар выбирается случайно" alt="User"/>
+                    {/* TODO: Сделать чтобы при клике на аватарку открывалось меню её изменения */}
                     <i className={"fa fa-circle " + "online"}></i>
                     {/* TODO: Сделать чтобы можно выбрать свой онлайн и он ставился после задержки: offline, online, idle */}
                 </div>

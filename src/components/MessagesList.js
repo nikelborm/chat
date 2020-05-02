@@ -9,10 +9,6 @@ class MessagesList extends Component {
         this.down = createRef();
     }
     shouldComponentUpdate(nextProps) {
-        console.log('this.props.messages, nextProps.messages: ', this.props.messages, nextProps.messages);
-        console.log(shallowEqual(this.props.messages, nextProps.messages));
-        console.log('this.props.activeChat !== nextProps.activeChat: ', this.props.activeChat !== nextProps.activeChat);
-        console.log('this.props.isLoading !== nextProps.isLoading: ', this.props.isLoading !== nextProps.isLoading);
         return (
             this.props.activeChat !== nextProps.activeChat ||
             !shallowEqual(this.props.messages, nextProps.messages) ||

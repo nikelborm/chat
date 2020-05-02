@@ -8,10 +8,10 @@ class Participant extends Component {
     }
     render() {
         const { userName, fullName, onlineStatus } = this.props.userInfo;
-        const { isDirect, isMuted, onMuteChange, onDeleteChat } = this.props;
+        const { isDirect, isMuted, onMuteChange, onDeleteChat, onSelectChat } = this.props;
         if (isDirect) {
             return (
-                <li className="item" >
+                <li className="item" onClick={onSelectChat.bind(undefined, userName)}>
                     <i className={"fa fa-circle-o " + onlineStatus}></i>
                     <span title={userName}>{fullName}</span>
                     <i
@@ -26,7 +26,7 @@ class Participant extends Component {
             );
         } else {
             return (
-                <li className="item tabbed" >
+                <li className="item tabbed" onClick={onSelectChat.bind(undefined, userName)}>
                     <i className={"fa fa-circle-o " + onlineStatus} title={userName}></i>
                     <span>{fullName}</span>
                 </li>

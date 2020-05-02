@@ -278,6 +278,7 @@ app.get("/finishRegistration", function (request, response) {
         response.redirect(page);
     });
 });
+// TODO: Сделать,чтобы сессия привязывалась к ip, что помешает использовать одни и те же сессионные куки на разных устройствах
 app.post("/canIregister", function (request, response) {
     const { userName, password, confirmPassword, fullName, email } = request.body;
     let resdata = validate("register", { userName, password, confirmPassword, fullName, email });

@@ -3,7 +3,7 @@ import Participant from "./Participant";
 
 class ParticipantsList extends Component {
     render() {
-        const { usersInSpecificRoom, onExpandChange, room, specificRoomInfo, onMuteChange, onDeleteChat } = this.props;
+        const { usersInSpecificRoom, onExpandChange, room, specificRoomInfo, onMuteChange, onDeleteChat, onSelectChat } = this.props;
         const listOfParticipants = Object.keys(usersInSpecificRoom).map((userId) => (
             <Participant
                 key={userId}
@@ -13,7 +13,7 @@ class ParticipantsList extends Component {
         ));
         return (
             <Fragment>
-                <li className="item">
+                <li className="item" onClick={onSelectChat.bind(undefined, room)}>
                     <i className="fas fa-user-alt"></i>
                     <span>{room}</span>
                     <i

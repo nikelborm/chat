@@ -4,7 +4,7 @@ import Participant from './Participant';
 
 class ParticipantManager extends Component {
     render() {
-        const { myRooms, usersInRooms, roomsInfo, onMuteChange, onExpandChange, onDeleteChat } = this.props;
+        const { myRooms, usersInRooms, roomsInfo, onMuteChange, onExpandChange, onDeleteChat, onSelectChat } = this.props;
         let directChats = [];
         let roomsParticipants = [];
 
@@ -18,6 +18,7 @@ class ParticipantManager extends Component {
                         userInfo={roomsInfo[chatName].userInfo}
                         onMuteChange={onMuteChange}
                         onDeleteChat={onDeleteChat}
+                        onSelectChat={onSelectChat}
                     />
                 );
             } else {
@@ -30,6 +31,7 @@ class ParticipantManager extends Component {
                         onExpandChange={onExpandChange}
                         onMuteChange={onMuteChange}
                         onDeleteChat={onDeleteChat}
+                        onSelectChat={onSelectChat}
                     />
                 );
             }
@@ -37,7 +39,7 @@ class ParticipantManager extends Component {
         return (
             <ul>
                 { directChats.length
-                    ? <li className="item active">
+                    ? <li className="item header">
                         <i className="fa fa-list-alt"></i>
                         <span>Прямые чаты</span>
                     </li>
@@ -45,7 +47,7 @@ class ParticipantManager extends Component {
                 }
                 {directChats}
                 { roomsParticipants.length
-                    ? <li className="item active">
+                    ? <li className="item header">
                         <i className="fa fa-list-alt"></i>
                         <span>Комнаты</span>
                     </li>

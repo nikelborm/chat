@@ -130,11 +130,15 @@ b{
 	position: relative;
 	border-bottom: 2px solid #586476;
 }
-.tabbed.item{
+.tabbed.item {
 	padding-left: 20px;
 }
+.item:not(.tabbed):not(.header) {
+	cursor: pointer;
+}
 .item:hover,
-.item.active {
+.item.active,
+.item.header {
 	background: #445166;
 	color: #fff;
 }

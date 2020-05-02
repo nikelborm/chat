@@ -8,6 +8,7 @@ import RightTabs from "../layout/RightTabs";
 import parseMessageTime from '../tools/parseMessageTime';
 import parseMessageBody from '../tools/parseMessageBody';
 import getCookie from "../tools/getCookie";
+import loader from "../tools/loader";
 
 // const whyDidYouRender = require("@welldone-software/why-did-you-render");
 // whyDidYouRender(React, {
@@ -48,14 +49,18 @@ class WindowArea extends Component {
         roomsInfo : {
             global: {
                 isExpanded: false,
-                isUsersDownloaded: false,
+                isUsersDownloaded: true,
+                isUsersDownloadingNow: false,
                 isHistoryDownloaded: true,
+                isHistoryDownloadingNow: false,
                 isDirect: false,
                 isMuted: false
             },
             kolya_kun: {
                 isDirect: true,
                 isMuted: false,
+                isHistoryDownloaded: true,
+                isHistoryDownloadingNow: false,
                 userID: "longHexUserId0000000000000001",
                 userInfo: {
                     userName: "kolya_kun",
@@ -82,6 +87,21 @@ class WindowArea extends Component {
                     messageBody : ["qwe"], // Распарсенное сообщение text
                     correctTime : "12 декабря 08:56" // Распарсенное время time
                 }
+            },
+            kolya_kun: {
+                longHexMessageId0000000000000000qw: {
+                    userInfo: {
+                        userName: "kolya_kun",
+                        fullName: "Коля",
+                        statusText : "В сети",
+                        avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
+                        onlineStatus: "online",
+                        rooms: ["global"] // Не все его комнаты, а только пересекающиеся cо мной
+                    }, // Ссылка на пользователя в knownUsers
+                    userID: "longHexUserId0000000000000000",
+                    messageBody : ["qwsdsde"], // Распарсенное сообщение text
+                    correctTime : "кабря 08:56" // Распарсенное время time
+                }
             }
         },
         usersInRooms: {
@@ -104,43 +124,44 @@ class WindowArea extends Component {
         // for (const room of this.state.myRooms) {
         //     this.loader("/loadListOfUsersInChat", "usersInRooms", "isUsersListInRoomDownloaded", room);
         // } // А надо ли?
+        // Код остаток, который ещё пригодится
+        // const {reply, report} = data;
+        // if (report.isError) {
+        //     // TODO: Добавить обработку ошибок (можно с TIPPY)
+        // } else {
+        //     this[pasteSuccessIn] = true;
+        //     this.setState((prevState) => {
+        //         prevState[pasteReplyIn][room] = reply;
+        //         return prevState;
+        //     });
+        // }
     };
-    loader = async (path, pasteReplyIn, pasteSuccessIn, room) => {
-        let data;
-        try {
-            const response = await fetch(document.location.origin + path, {
-                method: "post",
-                body: JSON.stringify({ room }),
-                headers: new Headers({
-                    "Content-Type": "application/json"
-                })
-            });
-            data = await response.json();
-            console.log(data);
-        } catch (error) {
-            data = {
-                report: {
-                    isError: true,
-                    info: "Ошибка при загрузке данных с " + path
-                }
-            };
-            console.error(error);
-        }
-
-        const {reply, report} = data;
-        if (report.isError) {
-            // TODO: Добавить обработку ошибок (можно с TIPPY)
-        } else {
-            this[pasteSuccessIn] = true;
-            this.setState((prevState) => {
-                prevState[pasteReplyIn][room] = reply;
-                return prevState;
-            });
-        }
-    };
-    onSelectChat = () => {
+    onSelectChat = async (room) => {
+        console.log('onSelectChat: ', room);
         // TODO: Загрузка сообщений по конкретному чату
         // А после добавление их и новой активной комнаты в state
+        if (this.state.roomsInfo[room].isHistoryDownloadingNow) {
+            // вроде ничего не должны делать
+            return;
+        }
+        if (!this.state.roomsInfo[room].isHistoryDownloaded) {
+            const {reply, report} = await loader("/загрузить историю конкретного чата", { room });
+            if (report.isError) {
+                // TODO: Добавить обработку ошибок (можно с TIPPY)
+            } else {
+                this[pasteSuccessIn] = true;
+                this.setState((prevState) => {
+                    prevState[pasteReplyIn][room] = reply;
+                    return prevState;
+                });
+            }
+        } else {
+
+        }
+        this.setState((prevState) => {
+            prevState.activeChat = room;
+            return prevState;
+        });
 
     };
     onExpandChange = (room) => {
@@ -261,6 +282,7 @@ class WindowArea extends Component {
                         onExpandChange={this.onExpandChange}
                         onMuteChange={this.onMuteChange}
                         onDeleteChat={this.onDeleteChat}
+                        onSelectChat={this.onSelectChat}
                     />
                     <MyAccountInfo />
                 </div>
