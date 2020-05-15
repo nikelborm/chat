@@ -30,8 +30,42 @@ function randomString(len) {
     }
     return str;
 }
+function intersection(setA, setB) {
+    let _intersection = new Set()
+    for (let elem of setB) {
+        if (setA.has(elem)) {
+            _intersection.add(elem);
+        }
+    }
+    return _intersection;
+}
+function filterAuthInfo(authInfo/*ToFilter*/) {
+    return {
+        userName: authInfo.userName,
+        fullName: authInfo.fullName,
+        statusText : authInfo.statusText,
+        avatarLink : authInfo.avatarLink,
+        onlineStatus: activeUsersCounter[authInfo._id] ? "online" : "offline"
+    };
+}
+function filterAuthInfoHarder(authInfo/*ToFilter*/) {
+    // облегчённая версия
+    return {
+        
+    };
+}
+function notifyAboutNewPersonInChat(NewPersonAuthInfo, room) {
+    const user = filterAuthInfo(NewPersonAuthInfo);
+    WSServer.clients.forEach(function (client) {
+        if (client.authInfo.rooms.has(room)) {
+            user.rooms = intersection(NewPersonAuthInfo.rooms, client.authInfo.rooms);
+            client.send(JSON.stringify({handlerType: "newPersonInChat", id: NewPersonAuthInfo._id, user, room}));
+        }
+    });
+}
 function createEmptyResponseData() {
     return {
+        handlerType: "logs",
         report: {
             isError: true,
             info: ""
@@ -39,10 +73,11 @@ function createEmptyResponseData() {
         reply: {}
     };
 }
-function validate(mode, body, authInfo) {
-    /* body не сам, а только необходимые параметры */
+
+function validate1lvl(mode, body) {
+    // login, registration и тому подобные
     let resdata = createEmptyResponseData();
-    const { userNameOrEmail, password, userName, confirmPassword, fullName, email, room, text } = body;
+    const { userNameOrEmail, password, userName, confirmPassword, fullName, email} = body;
     let info = "";
     let errorField = "";
 
@@ -82,24 +117,33 @@ function validate(mode, body, authInfo) {
         case password:
             info = "Вы не ввели пароль";
             errorField = mode === "login" ? "passwordLogin" : "passwordRegister";
-            break;
-        case text:
-            info = "Вы отправили пустое сообщение";
     }
-    if (["loadChatHistory", "loadListOfUsersInChat", "onmessage"].includes(mode)) {
-        if (!authInfo) {
-            info = "Вы не авторизованы";
-        } else {
-            let { rooms } = authInfo;
-            if (!rooms[rooms instanceof Set ? "has": "includes"](room)) {
-                info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
-            }
+
+    resdata.reply.errorField = errorField;
+    resdata.report.info = info;
+    return resdata;
+}
+function validate2lvl(body, authInfo) {
+    // message, loadChatHistory и тому подобные
+    let resdata = createEmptyResponseData();
+    const { room, text } = body;
+    let info = "";
+
+    if (!isAllStrings(body)) {
+        resdata.report.info = "Неправильно составлен запрос";
+        return resdata;
+    }
+
+    if (!authInfo) {
+        info = "Вы не авторизованы";
+    } else {
+        if (!authInfo.rooms.has(room)) {
+            info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
+        } else if (text === "") {
+            info = "Вы отправили пустое сообщение";
         }
     }
 
-    if (errorField) {
-        resdata.reply.errorField = errorField;
-    }
     resdata.report.info = info;
     return resdata;
 }
@@ -153,17 +197,6 @@ function logout(request, response) {
         clearCookies(response, "userName", "fullName", "statusText", "avatarLink");
         response.redirect("/");
     });
-}
-function notifyAboutNewPersonInChat(authInfo, room) {
-    const id = authInfo._id.toString();
-    const user = {
-        userName: authInfo.userName,
-        fullName: authInfo.fullName,
-        statusText : authInfo.statusText,
-        avatarLink : authInfo.avatarLink,
-        onlineStatus: activeUsersCounter[id] ? "online" : "offline"
-    };
-    sendToEveryoneInRoom({handlerType: "newPersonInChat", id, user, room}, room);
 }
 
 const port = process.env.PORT || 3000;
@@ -219,7 +252,7 @@ app.get("/logout", logout);
 
 app.post("/canIlogin", function (request, response) {
     const { userNameOrEmail, password } = request.body;
-    let resdata = validate("login", { userNameOrEmail, password });
+    let resdata = validate1lvl("login", { userNameOrEmail, password });
     let rp = resdata.report;
 
     if (rp.info) return response.json(resdata);
@@ -262,7 +295,6 @@ app.get("/finishRegistration", function (request, response) {
             result.rooms = ["global"];
             request.session.authInfo = result;
             fillCookies(response, result, "userName", "fullName", "statusText", "avatarLink", "rooms");
-            notifyAboutNewPersonInChat(result, "global");
             page = "/chat";
             return users.updateOne( { _id }, {
                 $addToSet: { rooms: "global" },
@@ -281,7 +313,7 @@ app.get("/finishRegistration", function (request, response) {
 // TODO: Сделать,чтобы сессия привязывалась к ip, что помешает использовать одни и те же сессионные куки на разных устройствах
 app.post("/canIregister", function (request, response) {
     const { userName, password, confirmPassword, fullName, email } = request.body;
-    let resdata = validate("register", { userName, password, confirmPassword, fullName, email });
+    let resdata = validate1lvl("register", { userName, password, confirmPassword, fullName, email });
     let rp = resdata.report;
 
     if (rp.info) return response.json(resdata);
@@ -340,68 +372,8 @@ app.post("/canIregister", function (request, response) {
         response.json(resdata);
     });
 });
-// TODO: Добавить оповещение всех онлайновых, кто в одном чате о присоединении новичка
-// TODO: Сделать защиту, чтобы имя комнаты не было каким-нибудь ебанутым типа constructor, __proto__ или this
-// app.post("/canIjoinTheRoom", function (request, response) {
-//     let resdata = createEmptyResponseData();
-//     let rp = resdata.report;
-//     const d = request.body;
-//     notifyAboutNewPersonInChat()
-// });
+
 // TODO: Добавить восстановление аккаунта по почте
-app.post("/loadChatHistory", function (request, response) {
-    const { room } = request.body;
-    let resdata = validate("loadChatHistory", { room }, request.session.authInfo);
-    let rp = resdata.report;
-
-    if (rp.info) return response.json(resdata);
-
-    messages.find({room}, {projection: {room: 0}})
-    .toArray((err, results) => {
-        if (err) {
-            rp.info = err.message;
-            console.log(err);
-        } else {
-            resdata.reply = results;
-            rp.isError = false;
-            rp.info = "Данные успешно загружены";
-        }
-        response.json(resdata);
-    });
-});
-app.post("/loadListOfUsersInChat", function (request, response) {
-    const { room } = request.body;
-    let resdata = validate("loadListOfUsersInChat", { room }, request.session.authInfo);
-    let rp = resdata.report;
-
-    if (rp.info) return response.json(resdata);
-
-    let results = {};
-    users.find({rooms: room}, {projection: { userName:1, fullName:1 }})
-    .forEach(
-        (doc) => {
-            const id = doc._id.toString();
-            const user = {
-                userName: doc.userName,
-                fullName: doc.fullName,
-                onlineStatus: activeUsersCounter[id] ? "online" : "offline"
-            };
-            results[id] = user;
-        },
-        function (err) {
-            if (err) {
-                console.log(err);
-                rp.info = err;
-            } else {
-                resdata.reply = results;
-                rp.isError = false;
-                rp.info = "Данные успешно загружены";
-            }
-            response.json(resdata);
-        }
-    );
-});
-
 const server = http.createServer(app);
 const WSServer = new WebSocket.Server({
     server
@@ -438,33 +410,89 @@ WSServer.on("connection", (connection, request) => {
     });
     connection.on("message", (input) => {
         const { authInfo } = connection;
-        const { room, text } = JSON.parse(input);
-        let resdata = validate("onmessage", { room, text }, authInfo);
-        let rp = resdata.report;
+        const { handlerType, room, text } = JSON.parse(input);
 
-        if (rp.info) {
-            return connection.send(JSON.stringify({handlerType: "logs", response: resdata}));
+        let resdata = validate2lvl(handlerType === "message" ? { room, text } : { room }, authInfo);
+        let rp = resdata.report;
+        if (rp.info) return connection.send(JSON.stringify(resdata));
+
+        switch (handlerType) {
+            case "message":
+                let message = {
+                    room,
+                    authorID: authInfo.userName,
+                    text,
+                    time: new Date(Date.now())
+                };
+                messages.insertOne(message)
+                .then((result) => {
+                    const id = result.ops[0]._id;
+                    rp.info = "Сообщение успешно отправлено";
+                    rp.isError = false;
+                    resdata.reply = { id };
+                    sendToEveryoneInRoom({handlerType: "message", messageId: id, ...message}, room);
+                }).catch((err) => {
+                    console.log(err);
+                    rp.info = err.message;
+                }).finally(() => {
+                    connection.send(JSON.stringify(resdata));
+                });
+                break;
+            case "loadSpecificChatHistory":
+                messages.find({ room }, { projection: {room: 0} })
+                .toArray((err, results) => {
+                    if (err) {
+                        rp.info = err.message;
+                        console.log(err);
+                    } else {
+                        resdata.handlerType = "loadChatHistory";
+                        resdata.reply = { room, results };
+                        rp.isError = false;
+                        rp.info = "Данные успешно загружены";
+                    }
+                    connection.send(JSON.stringify(resdata));
+                });
+                break;
+            case "loadListOfUsersInChat":
+                let results = {};
+                users.find({rooms: room}, {projection: { userName:1, fullName:1 }})
+                .forEach(
+                    (doc) => {
+                        const id = doc._id.toString();
+                        const user = {
+                            userName: doc.userName,
+                            fullName: doc.fullName,
+                            onlineStatus: activeUsersCounter[id] ? "online" : "offline"
+                        };
+                        results[id] = user;
+                    },
+                    function (err) {
+                        if (err) {
+                            console.log(err);
+                            rp.info = err;
+                        } else {
+                            resdata.reply = { room, results };
+                            rp.isError = false;
+                            rp.info = "Данные успешно загружены";
+                        }
+                        connection.send(JSON.stringify(resdata));
+                    }
+                );
+                break;
+            case "canIjoinTheRoom":
+                // TODO: Добавить оповещение всех онлайновых, кто в одном чате о присоединении новичка
+                // TODO: Сделать защиту, чтобы имя комнаты не было каким-нибудь ебанутым типа constructor, __proto__ или this
+                // let resdata = createEmptyResponseData();
+                // let rp = resdata.report;
+                // const d = request.body;
+                // notifyAboutNewPersonInChat(authInfo, room);
+                break;
+            case "loadFilteredAuthInfoData":
+                // TODO: обязательно проверять а знаком ли этот пользователь со вторым
+                // Здесь загружается полная инфа о пользователе
+                break;
+            case "loadListOfDirectChats":
         }
-        let message = {
-            room,
-            authorID: authInfo.userName,
-            text,
-            time: new Date(Date.now())
-        };
-        messages.insertOne(message)
-        .then((result) => {
-            const id = result.ops[0]._id;
-            rp.info = "Сообщение успешно отправлено";
-            rp.isError = false;
-            delete message.room;
-            resdata.reply = { id };
-            sendToEveryoneInRoom({handlerType: "message", id, room, message}, room);
-        }).catch((err) => {
-            console.log(err);
-            rp.info = err.message;
-        }).finally(() => {
-            connection.send(JSON.stringify({handlerType: "logs", response: resdata}));
-        });
     });
 });
 setInterval(() => {

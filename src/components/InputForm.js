@@ -18,6 +18,7 @@ class InputForm extends PureComponent {
         if (window.isSocketAvailable) {
             this.instanceRef.current.hide();
             const data = {
+                handlerType: "message",
                 room: "global",
                 text: this.inputArea.current.value
             };

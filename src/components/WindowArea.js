@@ -8,7 +8,7 @@ import RightTabs from "../layout/RightTabs";
 import parseMessageTime from '../tools/parseMessageTime';
 import parseMessageBody from '../tools/parseMessageBody';
 import getCookie from "../tools/getCookie";
-import loader from "../tools/loader";
+// import loader from "../tools/loader";
 
 // const whyDidYouRender = require("@welldone-software/why-did-you-render");
 // whyDidYouRender(React, {
@@ -145,16 +145,16 @@ class WindowArea extends Component {
             return;
         }
         if (!this.state.roomsInfo[room].isHistoryDownloaded) {
-            const {reply, report} = await loader("/загрузить историю конкретного чата", { room });
-            if (report.isError) {
-                // TODO: Добавить обработку ошибок (можно с TIPPY)
-            } else {
-                this[pasteSuccessIn] = true;
-                this.setState((prevState) => {
-                    prevState[pasteReplyIn][room] = reply;
-                    return prevState;
-                });
-            }
+            // const {reply, report} = await loader("/загрузить историю конкретного чата", { room });
+            // if (report.isError) {
+            //     // TODO: Добавить обработку ошибок (можно с TIPPY)
+            // } else {
+            //     this[pasteSuccessIn] = true;
+            //     this.setState((prevState) => {
+            //         prevState[pasteReplyIn][room] = reply;
+            //         return prevState;
+            //     });
+            // }
         } else {
 
         }
@@ -199,15 +199,15 @@ class WindowArea extends Component {
             console.log("[message] Данные: ", data);
             switch (data.handlerType) {
                 case "logs":
-                    console.log("Пришли ответные логи: ", data.response);
+                    console.log("Пришли ответные логи: ", data.report);
                     break;
                 case "message":
                     // TODO: Подумать о том, а загружен ли этот чат, чтобы в него что-нибудь вставлять?
                     this.setState((prevState) => {
-                        prevState.chatsHistory[data.room][data.id] = {
-                            author_info : prevState.knownUsers[data.message.authorId],
-                            text : parseMessageBody(data.message.text),
-                            time : parseMessageTime(data.message.time)
+                        prevState.chatsHistory[data.room][data.messageId] = {
+                            author_info : prevState.knownUsers[data.authorId],
+                            text : parseMessageBody(data.text),
+                            time : parseMessageTime(data.time)
                         }
                         return prevState;
                     });
