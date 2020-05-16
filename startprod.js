@@ -39,29 +39,37 @@ function intersection(setA, setB) {
     }
     return _intersection;
 }
-function filterAuthInfo(authInfo/*ToFilter*/) {
+function createHardAuthInfo(authInfo) {
+    const { user: lite, id } = createLiteAuthInfo(authInfo);
     return {
-        userName: authInfo.userName,
-        fullName: authInfo.fullName,
-        statusText : authInfo.statusText,
-        avatarLink : authInfo.avatarLink,
-        onlineStatus: activeUsersCounter[authInfo._id] ? "online" : "offline"
+        user: {
+            ...lite,
+            statusText : authInfo.statusText,
+            avatarLink : authInfo.avatarLink
+        },
+        id
     };
 }
-function filterAuthInfoHarder(authInfo/*ToFilter*/) {
-    // облегчённая версия
+function createLiteAuthInfo(authInfo) {
+    const id = authInfo._id.toString();
     return {
-        
+        user: {
+            userName: authInfo.userName,
+            fullName: authInfo.fullName,
+            onlineStatus: activeUsersCounter[id] ? "online" : "offline"
+        },
+        id
     };
 }
 function notifyAboutNewPersonInChat(NewPersonAuthInfo, room) {
-    const user = filterAuthInfo(NewPersonAuthInfo);
+    const { user, id } = createHardAuthInfo(NewPersonAuthInfo);
     WSServer.clients.forEach(function (client) {
         if (client.authInfo.rooms.has(room)) {
             user.rooms = intersection(NewPersonAuthInfo.rooms, client.authInfo.rooms);
-            client.send(JSON.stringify({handlerType: "newPersonInChat", id: NewPersonAuthInfo._id, user, room}));
+            client.send(JSON.stringify());
         }
     });
+    sendToEveryoneInRoom({handlerType: "newPersonInChat", id, user, room})
 }
 function createEmptyResponseData() {
     return {
@@ -158,9 +166,12 @@ function sendToEveryoneKnown(messageBody, userRooms) {
         }
     });
 }
-function sendToEveryoneInRoom(messageBody, room) {
+function sendToEveryoneInRoom(messageBody, room, preSend) {
     WSServer.clients.forEach(function (client) {
         if (client.authInfo.rooms.has(room)) {
+            if (preSend) {
+                messageBody = preSend(messageBody);
+            }
             client.send(JSON.stringify(messageBody));
         }
     });
@@ -242,7 +253,7 @@ app.get("/chat", redirectIfNecessary.bind(undefined, "/chat"));
 app.use("/chat", express.static(path.join(__dirname, "build")));
 
 app.get("/deleteAccount", function(request, response) {
-    users.deleteOne({"_id": new mongodb.ObjectId(request.session.authInfo._id)}, function(err, result){
+    users.deleteOne({ _id : new mongodb.ObjectId(request.session.authInfo._id)}, function(err, result){
         if (err) return console.log(err);
         console.log(result);
     });
@@ -458,12 +469,7 @@ WSServer.on("connection", (connection, request) => {
                 users.find({rooms: room}, {projection: { userName:1, fullName:1 }})
                 .forEach(
                     (doc) => {
-                        const id = doc._id.toString();
-                        const user = {
-                            userName: doc.userName,
-                            fullName: doc.fullName,
-                            onlineStatus: activeUsersCounter[id] ? "online" : "offline"
-                        };
+                        const { user, id } = createLiteAuthInfo(doc);
                         results[id] = user;
                     },
                     function (err) {
@@ -482,16 +488,22 @@ WSServer.on("connection", (connection, request) => {
             case "canIjoinTheRoom":
                 // TODO: Добавить оповещение всех онлайновых, кто в одном чате о присоединении новичка
                 // TODO: Сделать защиту, чтобы имя комнаты не было каким-нибудь ебанутым типа constructor, __proto__ или this
-                // let resdata = createEmptyResponseData();
-                // let rp = resdata.report;
-                // const d = request.body;
-                // notifyAboutNewPersonInChat(authInfo, room);
+
+                notifyAboutNewPersonInChat(authInfo, room);
                 break;
             case "loadFilteredAuthInfoData":
-                // TODO: обязательно проверять а знаком ли этот пользователь со вторым
+                // TODO: обязательно проверять а знаком ли этот пользователь со вторым (хотя над этим ещё подумать надо)
                 // Здесь загружается полная инфа о пользователе
                 break;
             case "loadListOfDirectChats":
+                // TODO: Загрузить список прямых чатов
+                // Здесь загружается список всех прямых чатов с друзьями запрашивающего
+                break;
+            case "loadListOfMyRooms":
+                // загружать список именно комнат в которых я состою
+                break;
+            case "loadStartupData":
+                // loadListOfDirectChats, loadListOfMyRooms, loadFilteredAuthInfoDataOfMe
         }
     });
 });
