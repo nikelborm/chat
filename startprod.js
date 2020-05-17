@@ -2,6 +2,7 @@
 const express = require("express");
 const favicon = require("express-favicon");
 const mongodb = require("mongodb");
+const ObjectId = mongodb.ObjectId;
 const path = require("path");
 const session = require("express-session");
 const sha256 = require("sha256");
@@ -31,7 +32,7 @@ function randomString(len) {
     return str;
 }
 function intersection(setA, setB) {
-    let _intersection = new Set()
+    let _intersection = new Set();
     for (let elem of setB) {
         if (setA.has(elem)) {
             _intersection.add(elem);
@@ -69,7 +70,7 @@ function notifyAboutNewPersonInChat(NewPersonAuthInfo, room) {
             client.send(JSON.stringify());
         }
     });
-    sendToEveryoneInRoom({handlerType: "newPersonInChat", id, user, room})
+    sendToEveryoneInRoom({handlerType: "newPersonInChat", id, user, room});
 }
 function createEmptyResponseData() {
     const resdata = {
@@ -205,7 +206,7 @@ function logout(request, response) {
     });
 }
 function deleteEntityById(id) {
-    entities.deleteOne({ _id : new mongodb.ObjectId(id)})
+    entities.deleteOne({ _id : new ObjectId(id)})
     .catch((err) => {
         console.log(err);
     }).then((result) => {
@@ -297,17 +298,16 @@ app.get("/finishRegistration", function (request, response) {
     if (!isAllStrings({ secureToken, id })) {
         return response.redirect("/");
     }
-    const _id = new mongodb.ObjectID(id);
+    const _id = new ObjectId(id);
     let page = "/";
     entities.findOne({ _id, secureToken })
     .then((result) => {
         if (!result) return;
-        result.rooms = ["global"];
         request.session.authInfo = result;
         fillCookies(response, result, "userName", "fullName", "statusText", "avatarLink", "rooms");
         page = "/chat";
         return entities.updateOne( { _id }, {
-            $addToSet: { rooms: "global" },
+            // $addToSet: { rooms: "global" },
             $set: {
                 secureToken : randomString(32),
                 emailConfirmed: true
@@ -326,48 +326,65 @@ app.post("/canIregister", function (request, response) {
 
     if (rp.info) return response.json(resdata);
 
-    entities.findOne({ $or: [{ userName }, { email }] })
+    entities.findOne({isRoom: false, $or: [{ userName }, { email }] })
     .then((result) => {
+        const userProfile = {
+            isRoom: false,
+            userName,
+            password: sha256(password),
+            email,
+            fullName,
+            regDate: new Date(Date.now()),
+            statusText: "В сети", // TODO: Подумать над этим
+            avatarLink: "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif", // TODO: Добавить возможность выбора аватара
+            rooms: [],
+            directChats: [],
+            muted: [],
+            secureToken: randomString(32),
+            emailConfirmed: false
+        };
         if (!result) { // Не нашёл никаких результатов
-            const userProfile = {
-                userName,
-                password: sha256(password),
-                email,
-                fullName,
-                regDate: new Date(Date.now()),
-                statusText: "В сети",
-                avatarLink: "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif", // Это временно
-                rooms: [],
-                secureToken: randomString(32),
-                emailConfirmed: false
-            };
             return entities.insertOne(userProfile); // Возвращаем промис
         }
+        let info;
         if (result.emailConfirmed) {
             if (result.userName === userName) {
                 resdata.reply.errorField = "userName";
-                rp.info = "Этот никнейм занят.";
+                info = "Этот никнейм занят.";
             } else {
                 // (result.email === email)
                 resdata.reply.errorField = "email";
-                rp.info = "Эта почта занята.";
+                info = "Эта почта занята.";
             }
-            rp.info += " Если вы владелец, попробуйте <a href='/restore' style='color: #FFFFFF;'>восстановить аккаунт</a>.";
+            info += " Если вы владелец, попробуйте <a href='/restore' style='color: #FFFFFF;'>восстановить аккаунт</a>.";
+            throw new Error(info);
         }
+        // Если нашёлся неподтверждённый аккаунт
+        resdata.reply.errorField = "email";
+        if (result.userName === userName) {
+            if (result.email === email) {
+                rp.info = "Аккаунт с указанными ником и почтой уже был создан, но не подтверждён. Мы отправим письмо повторно. Если вы его не получите, проверьте спам или укажите почту другого сервиса.";
+            } else {
+                rp.info = "Аккаунт с указанным ником, но другой почтой уже был создан, но не подтверждён. Мы отправим письмо повторно, но уже на новый адрес. Если вы его не получите, проверьте спам или укажите почту другого сервиса.";
+            }
+        } else {
+            // (result.email === email)
+            rp.info = "Аккаунт с этой почтой, но другим ником уже был создан, но не подтверждён. Мы отправим письмо повторно. Если вы его не получите, проверьте спам или укажите почту другого сервиса.";
+        }
+        return entities.updateOne({_id: result._id}, {$set: userProfile});
     }).then((result) => {
-        if (rp.info) return;
-        const { secureToken, email, _id } = result.ops[0];
+        const { secureToken, email, _id } = result.ops ? result.ops[0] : result;
         // TODO: Настроить почтовый сервер, DNS, MX записи, а также SPF, DKIM, DMARC
         // И всё ради того, чтобы гугл блять не ругался и принимал почту
         // Тут иногда появляется фантомный баг и какой-нибудь символ (зачастую точка) исчезает из адреса в html
-        console.log();
         sendmail({
             from: "robot <noreply@nikel.herokuapp.com>",
             to: email,
             subject: "Завершение регистрации",
             html: `<h2><a href="https://nikel.herokuapp.com/finishRegistration?${ querystring.stringify({id : _id.toString(), secureToken})}">Чтобы завершить регистрацию, перейдите по ссылке</a></h2> `
-        }, (err, reply) => {
+        }, (err) => {
             if (err) {
+                // TODO: подумать как сделать, чтобы сообщение об ошибке отправки не затирало сообщения о неподтверждённом аккаунте
                 rp.info = err.message;
                 return;
             }
