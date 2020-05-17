@@ -256,10 +256,10 @@ app.get("/chat", redirectIfNecessary.bind(undefined, "/chat"));
 app.use("/chat", express.static(path.join(__dirname, "build")));
 
 app.get("/deleteAccount", function(request, response) {
+    // TODO: По такому же принципу построить удаление комнат
     deleteEntityById(request.session.authInfo._id);
     logout(request, response);
 });
-// TODO: По такому же принципу построить удаление комнат
 app.get("/logout", logout);
 
 app.post("/canIlogin", function (request, response) {
@@ -371,9 +371,9 @@ app.post("/canIregister", function (request, response) {
             // (result.email === email)
             rp.info = "Аккаунт с этой почтой, но другим ником уже был создан, но не подтверждён. Мы отправим письмо повторно. Если вы его не получите, проверьте спам или укажите почту другого сервиса.";
         }
-        return entities.updateOne({_id: result._id}, {$set: userProfile});
+        return entities.findOneAndReplace({_id: result._id}, userProfile, {returnOriginal:false});
     }).then((result) => {
-        const { secureToken, email, _id } = result.ops ? result.ops[0] : result;
+        const { secureToken, email, _id } = result.value ? result.value : result.ops[0];
         // TODO: Настроить почтовый сервер, DNS, MX записи, а также SPF, DKIM, DMARC
         // И всё ради того, чтобы гугл блять не ругался и принимал почту
         // Тут иногда появляется фантомный баг и какой-нибудь символ (зачастую точка) исчезает из адреса в html
@@ -383,11 +383,8 @@ app.post("/canIregister", function (request, response) {
             subject: "Завершение регистрации",
             html: `<h2><a href="https://nikel.herokuapp.com/finishRegistration?${ querystring.stringify({id : _id.toString(), secureToken})}">Чтобы завершить регистрацию, перейдите по ссылке</a></h2> `
         }, (err) => {
-            if (err) {
-                // TODO: подумать как сделать, чтобы сообщение об ошибке отправки не затирало сообщения о неподтверждённом аккаунте
-                rp.info = err.message;
-                return;
-            }
+            throw err;
+            // TODO: подумать как сделать, чтобы сообщение об ошибке отправки не затирало сообщения о неподтверждённом аккаунте
         });
         rp.isError = false;
         rp.info = "Регистрация успешна";
@@ -542,7 +539,6 @@ const mongoClient = new mongodb.MongoClient(mongoLink, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 });
-// TODO: Должна быть третья коллекция с комнатами
 mongoClient.connect(function (err, client) {
     if (err) return console.log(err);
 

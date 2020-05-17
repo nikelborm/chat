@@ -5,7 +5,7 @@ import MyAccountInfo from "./MyAccountInfo";
 
 import ParticipantManager from "./ParticipantManager";
 import RightTabs from "../layout/RightTabs";
-import parseMessageTime from '../tools/parseMessageTime';
+import convertMessageTime from '../tools/convertMessageTime';
 import parseMessageBody from '../tools/parseMessageBody';
 import getCookie from "../tools/getCookie";
 // import loader from "../tools/loader";
@@ -207,7 +207,7 @@ class WindowArea extends Component {
                         prevState.chatsHistory[data.room][data.messageId] = {
                             author_info : prevState.knownUsers[data.authorId],
                             text : parseMessageBody(data.text),
-                            time : parseMessageTime(data.time)
+                            time : convertMessageTime(data.time)
                         }
                         return prevState;
                     });

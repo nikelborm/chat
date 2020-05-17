@@ -1,4 +1,4 @@
-function parseMessageTime(time) {
+function convertMessageTime(time) {
     return new Intl.DateTimeFormat("ru", {
         month: "long",
         day: "numeric",
@@ -7,4 +7,4 @@ function parseMessageTime(time) {
         timeZone: "Europe/Moscow"
     }).format(Date.parse(time));
 }
-export default parseMessageTime;
+export default convertMessageTime;
