@@ -72,7 +72,7 @@ function notifyAboutNewPersonInChat(NewPersonAuthInfo, room) {
     sendToEveryoneInRoom({handlerType: "newPersonInChat", id, user, room})
 }
 function createEmptyResponseData() {
-    return {
+    const resdata = {
         handlerType: "logs",
         report: {
             isError: true,
@@ -80,18 +80,18 @@ function createEmptyResponseData() {
         },
         reply: {}
     };
+    return {resdata, rp: resdata.report};
 }
-
 function validate1lvl(mode, body) {
     // login, registration и тому подобные
-    let resdata = createEmptyResponseData();
+    let { resdata, rp } = createEmptyResponseData();
     const { userNameOrEmail, password, userName, confirmPassword, fullName, email} = body;
     let info = "";
     let errorField = "";
 
     if (!isAllStrings(body)) {
-        resdata.report.info = "Неправильно составлен запрос";
-        return resdata;
+        rp.info = "Неправильно составлен запрос";
+        return {resdata, rp: resdata.report};
     }
     if (mode === "register") {
         if (password.length < 8) {
@@ -128,32 +128,27 @@ function validate1lvl(mode, body) {
     }
 
     resdata.reply.errorField = errorField;
-    resdata.report.info = info;
-    return resdata;
+    rp.info = info;
+    return {resdata, rp: resdata.report};
 }
 function validate2lvl(body, authInfo) {
     // message, loadChatHistory и тому подобные
-    let resdata = createEmptyResponseData();
+    let { resdata, rp } = createEmptyResponseData();
     const { room, text } = body;
     let info = "";
 
     if (!isAllStrings(body)) {
-        resdata.report.info = "Неправильно составлен запрос";
-        return resdata;
-    }
-
-    if (!authInfo) {
+        info = "Неправильно составлен запрос";
+    } else if (!authInfo) {
         info = "Вы не авторизованы";
-    } else {
-        if (!authInfo.rooms.has(room)) {
-            info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
-        } else if (text === "") {
-            info = "Вы отправили пустое сообщение";
-        }
+    } else if (!authInfo.rooms.has(room)) {
+        info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
+    } else if (text === "") {
+        info = "Вы отправили пустое сообщение";
     }
 
-    resdata.report.info = info;
-    return resdata;
+    rp.info = info;
+    return {resdata, rp: resdata.report};
 }
 function sendToEveryoneKnown(messageBody, userRooms) {
     WSServer.clients.forEach(function (client) {
@@ -209,7 +204,14 @@ function logout(request, response) {
         response.redirect("/");
     });
 }
-
+function deleteEntityById(id) {
+    entities.deleteOne({ _id : new mongodb.ObjectId(id)})
+    .catch((err) => {
+        console.log(err);
+    }).then((result) => {
+        console.log(result);
+    });
+}
 const port = process.env.PORT || 3000;
 const mongoLink = process.env.MONGODB_URI || "mongodb://myUserAdmin:0000@localhost:27017/admin";
 const redisLink = process.env.REDIS_URL || "redis://admin:foobared@127.0.0.1:6379";
@@ -218,7 +220,7 @@ const secretKey = process.env.SECRET || "wHaTeVeR123";
 // const mailPassword = process.env.GMAIL_PASS || "wHaTeVeR123";
 
 let dbClient;
-let users;
+let entities;
 let messages;
 let activeUsersCounter = {};
 
@@ -253,22 +255,19 @@ app.get("/chat", redirectIfNecessary.bind(undefined, "/chat"));
 app.use("/chat", express.static(path.join(__dirname, "build")));
 
 app.get("/deleteAccount", function(request, response) {
-    users.deleteOne({ _id : new mongodb.ObjectId(request.session.authInfo._id)}, function(err, result){
-        if (err) return console.log(err);
-        console.log(result);
-    });
+    deleteEntityById(request.session.authInfo._id);
     logout(request, response);
 });
+// TODO: По такому же принципу построить удаление комнат
 app.get("/logout", logout);
 
 app.post("/canIlogin", function (request, response) {
     const { userNameOrEmail, password } = request.body;
-    let resdata = validate1lvl("login", { userNameOrEmail, password });
-    let rp = resdata.report;
+    let { resdata, rp } = validate1lvl("login", { userNameOrEmail, password });
 
     if (rp.info) return response.json(resdata);
 
-    users.findOne({$or: [{ userName: userNameOrEmail }, { email: userNameOrEmail }]})
+    entities.findOne({ isRoom: false, $or: [{ userName: userNameOrEmail }, { email: userNameOrEmail }]})
     .then((result) => {
         if (!result) {
             resdata.reply.errorField = "userNameOrEmail";
@@ -300,21 +299,20 @@ app.get("/finishRegistration", function (request, response) {
     }
     const _id = new mongodb.ObjectID(id);
     let page = "/";
-    users.findOne({ _id })
+    entities.findOne({ _id, secureToken })
     .then((result) => {
-        if (result && result.secureToken === secureToken) {
-            result.rooms = ["global"];
-            request.session.authInfo = result;
-            fillCookies(response, result, "userName", "fullName", "statusText", "avatarLink", "rooms");
-            page = "/chat";
-            return users.updateOne( { _id }, {
-                $addToSet: { rooms: "global" },
-                $set: {
-                    secureToken : randomString(32),
-                    emailConfirmed: true
-                }
-            });
-        }
+        if (!result) return;
+        result.rooms = ["global"];
+        request.session.authInfo = result;
+        fillCookies(response, result, "userName", "fullName", "statusText", "avatarLink", "rooms");
+        page = "/chat";
+        return entities.updateOne( { _id }, {
+            $addToSet: { rooms: "global" },
+            $set: {
+                secureToken : randomString(32),
+                emailConfirmed: true
+            }
+        });
     }).catch((err) => {
         console.log(err);
     }).finally(() => {
@@ -324,12 +322,11 @@ app.get("/finishRegistration", function (request, response) {
 // TODO: Сделать,чтобы сессия привязывалась к ip, что помешает использовать одни и те же сессионные куки на разных устройствах
 app.post("/canIregister", function (request, response) {
     const { userName, password, confirmPassword, fullName, email } = request.body;
-    let resdata = validate1lvl("register", { userName, password, confirmPassword, fullName, email });
-    let rp = resdata.report;
+    let { resdata, rp } = validate1lvl("register", { userName, password, confirmPassword, fullName, email });
 
     if (rp.info) return response.json(resdata);
 
-    users.findOne({ $or: [{ userName }, { email }] })
+    entities.findOne({ $or: [{ userName }, { email }] })
     .then((result) => {
         if (!result) { // Не нашёл никаких результатов
             const userProfile = {
@@ -344,7 +341,7 @@ app.post("/canIregister", function (request, response) {
                 secureToken: randomString(32),
                 emailConfirmed: false
             };
-            return users.insertOne(userProfile); // Возвращаем промис
+            return entities.insertOne(userProfile); // Возвращаем промис
         }
         if (result.emailConfirmed) {
             if (result.userName === userName) {
@@ -397,8 +394,8 @@ WSServer.on("connection", (connection, request) => {
         if (err) console.log(err);
 
         if (!session || !session.authInfo || err) {
-            let resdata = createEmptyResponseData();
-            resdata.report = "Вы не авторизованы!";
+            let { resdata, rp } = createEmptyResponseData();
+            rp.info = "Вы не авторизованы!";
             connection.send(JSON.stringify(resdata));
             connection.terminate();
         } else {
@@ -423,12 +420,14 @@ WSServer.on("connection", (connection, request) => {
         const { authInfo } = connection;
         const { handlerType, room, text } = JSON.parse(input);
 
-        let resdata = validate2lvl(handlerType === "message" ? { room, text } : { room }, authInfo);
-        let rp = resdata.report;
+        let { resdata, rp } = validate2lvl(handlerType === "message" ? { room, text } : { room }, authInfo);
+        resdata.handlerType = handlerType;
+
         if (rp.info) return connection.send(JSON.stringify(resdata));
 
         switch (handlerType) {
             case "message":
+                // TODO: Проверять имеет ли пользователь право отправлять сообщения в этот чат
                 let message = {
                     room,
                     authorID: authInfo.userName,
@@ -456,7 +455,6 @@ WSServer.on("connection", (connection, request) => {
                         rp.info = err.message;
                         console.log(err);
                     } else {
-                        resdata.handlerType = "loadChatHistory";
                         resdata.reply = { room, results };
                         rp.isError = false;
                         rp.info = "Данные успешно загружены";
@@ -466,7 +464,7 @@ WSServer.on("connection", (connection, request) => {
                 break;
             case "loadListOfUsersInChat":
                 let results = {};
-                users.find({rooms: room}, {projection: { userName:1, fullName:1 }})
+                entities.find({rooms: room}, {projection: { userName:1, fullName:1 }})
                 .forEach(
                     (doc) => {
                         const { user, id } = createLiteAuthInfo(doc);
@@ -488,12 +486,14 @@ WSServer.on("connection", (connection, request) => {
             case "canIjoinTheRoom":
                 // TODO: Добавить оповещение всех онлайновых, кто в одном чате о присоединении новичка
                 // TODO: Сделать защиту, чтобы имя комнаты не было каким-нибудь ебанутым типа constructor, __proto__ или this
-
+                
                 notifyAboutNewPersonInChat(authInfo, room);
                 break;
             case "loadFilteredAuthInfoData":
                 // TODO: обязательно проверять а знаком ли этот пользователь со вторым (хотя над этим ещё подумать надо)
                 // Здесь загружается полная инфа о пользователе
+                resdata.reply = createHardAuthInfo();
+                connection.send(JSON.stringify(resdata));
                 break;
             case "loadListOfDirectChats":
                 // TODO: Загрузить список прямых чатов
@@ -530,7 +530,7 @@ mongoClient.connect(function (err, client) {
     if (err) return console.log(err);
 
     dbClient = client;
-    users = client.db().collection("users");
+    entities = client.db().collection("entities");
     messages = client.db().collection("messages");
     server.listen(port, function(){
         console.log("Сервер слушает");
