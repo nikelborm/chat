@@ -19,7 +19,7 @@ const querystring = require("querystring");
 function isAllStrings(body) {
     let result = 1;
     for (let prop in body) {
-        result &= typeof body[prop] === "string";
+        result &= +(typeof body[prop] === "string");
     }
     return result;
 }
@@ -62,15 +62,15 @@ function createLiteAuthInfo(authInfo) {
         id
     };
 }
-function notifyAboutNewPersonInChat(NewPersonAuthInfo, room) {
-    const { user, id } = createHardAuthInfo(NewPersonAuthInfo);
-    WSServer.clients.forEach(function (client) {
-        if (client.authInfo.rooms.has(room)) {
-            user.rooms = intersection(NewPersonAuthInfo.rooms, client.authInfo.rooms);
-            client.send(JSON.stringify());
+function notifyAboutNewPersonInChat(newAuthInfo, room) {
+    const { user, id } = createHardAuthInfo(newAuthInfo);
+    sendToEveryoneInRoom(
+        {handlerType: "newPersonInChat", id, user, room},
+        (body, clientsrooms) => {
+            body.user.rooms = intersection(newAuthInfo.rooms, clientsrooms);
+            return body;
         }
-    });
-    sendToEveryoneInRoom({handlerType: "newPersonInChat", id, user, room});
+    );
 }
 function createEmptyResponseData() {
     const resdata = {
@@ -166,7 +166,7 @@ function sendToEveryoneInRoom(messageBody, room, preSend) {
     WSServer.clients.forEach(function (client) {
         if (client.authInfo.rooms.has(room)) {
             if (preSend) {
-                messageBody = preSend(messageBody);
+                messageBody = preSend(messageBody, client.authInfo.rooms);
             }
             client.send(JSON.stringify(messageBody));
         }
@@ -182,7 +182,7 @@ function onCloseWSconnection(connection) {
     }
 }
 function redirectIfNecessary(target, request, response) {
-    if (!!request.session.authInfo ^ target === "/") {
+    if (!!request.session.authInfo !== (target === "/")) {
         response.sendFile(path.join(__dirname, target === "/" ? "authorize" : "build", "index.html"));
     } else {
         response.redirect(target === "/" ? "/chat" : "/");
@@ -203,6 +203,15 @@ function logout(request, response) {
         if (err) return console.log(err);
         clearCookies(response, "userName", "fullName", "statusText", "avatarLink");
         response.redirect("/");
+    });
+}
+function shutdownOn(sig) {
+    process.on(sig, function() {
+        WSServer.close(() => {
+            console.log("Все WebSocket соединения успешно завершены");
+        });
+        dbClient.close();
+        process.exit();
     });
 }
 function deleteEntityById(id) {
@@ -298,6 +307,7 @@ app.get("/finishRegistration", function (request, response) {
     if (!isAllStrings({ secureToken, id })) {
         return response.redirect("/");
     }
+    // @ts-ignore
     const _id = new ObjectId(id);
     let page = "/";
     entities.findOne({ _id, secureToken })
@@ -403,7 +413,7 @@ const WSServer = new WebSocket.Server({
 WSServer.on("connection", (connection, request) => {
     connection.isAlive = true;
     const cookies = cookie.parse(request.headers.cookie);
-    const sid = cookieParser.signedCookie(cookies["connect.sid"], secretKey);
+    const sid = ""+cookieParser.signedCookie(cookies["connect.sid"], secretKey);
     store.get(sid, (err, session) => {
         if (err) console.log(err);
 
@@ -432,8 +442,7 @@ WSServer.on("connection", (connection, request) => {
     });
     connection.on("message", (input) => {
         const { authInfo } = connection;
-        const { handlerType, room, text } = JSON.parse(input);
-
+        const { handlerType, room, text } = JSON.parse(input.toString());
         let { resdata, rp } = validate2lvl(handlerType === "message" ? { room, text } : { room }, authInfo);
         resdata.handlerType = handlerType;
 
@@ -500,7 +509,7 @@ WSServer.on("connection", (connection, request) => {
             case "canIjoinTheRoom":
                 // TODO: Добавить оповещение всех онлайновых, кто в одном чате о присоединении новичка
                 // TODO: Сделать защиту, чтобы имя комнаты не было каким-нибудь ебанутым типа constructor, __proto__ или this
-                
+
                 notifyAboutNewPersonInChat(authInfo, room);
                 break;
             case "loadFilteredAuthInfoData":
@@ -531,7 +540,7 @@ setInterval(() => {
         }
         // обьявить все соединения мертвыми, а тех кто откликнется на ping, сделать живыми
         connection.isAlive = false;
-        connection.ping(null, false, true);
+        connection.ping(null, false);
     });
 }, 10000);
 
@@ -549,12 +558,5 @@ mongoClient.connect(function (err, client) {
         console.log("Сервер слушает");
     });
 });
-['SIGINT', 'SIGTERM'].forEach(function(sig) {
-    process.on(sig, function() {
-        WSServer.close(() => {
-            console.log("Все WebSocket соединения успешно завершены");
-        });
-        dbClient.close();
-        process.exit();
-    });
-});
+shutdownOn("SIGINT");
+shutdownOn("SIGTERM");
