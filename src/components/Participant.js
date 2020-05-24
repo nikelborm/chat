@@ -7,27 +7,27 @@ class Participant extends Component {
         this.props.isMuted !== nextProps.isMuted;
     }
     render() {
-        const { userName, fullName, onlineStatus } = this.props.userInfo;
+        const { nickName, fullName, onlineStatus } = this.props.userInfo;
         const { isDirect, isMuted, onMuteChange, onDeleteChat, onSelectChat } = this.props;
         if (isDirect) {
             return (
-                <li className="item" onClick={onSelectChat.bind(undefined, userName)}>
+                <li className="item" onClick={onSelectChat.bind(undefined, nickName)}>
                     <i className={"fa fa-circle-o " + onlineStatus}></i>
-                    <span title={userName}>{fullName}</span>
+                    <span title={nickName}>{fullName}</span>
                     <i
                         className="far fa-trash-alt"
-                        onClick={onDeleteChat.bind(undefined, userName)}
+                        onClick={onDeleteChat.bind(undefined, nickName)}
                     />
                     <i
                         className={"far fa-bell" + (isMuted ? "-slash": "")}
-                        onClick={onMuteChange.bind(undefined, userName)}
+                        onClick={onMuteChange.bind(undefined, nickName)}
                     />
                 </li>
             );
         } else {
             return (
-                <li className="item tabbed" onClick={onSelectChat.bind(undefined, userName)}>
-                    <i className={"fa fa-circle-o " + onlineStatus} title={userName}></i>
+                <li className="item tabbed" onClick={onSelectChat.bind(undefined, nickName)}>
+                    <i className={"fa fa-circle-o " + onlineStatus} title={nickName}></i>
                     <span>{fullName}</span>
                 </li>
             );

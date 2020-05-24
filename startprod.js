@@ -55,7 +55,7 @@ function createLiteAuthInfo(authInfo) {
     const id = authInfo._id.toString();
     return {
         user: {
-            userName: authInfo.userName,
+            nickName: authInfo.nickName,
             fullName: authInfo.fullName,
             onlineStatus: activeUsersCounter[id] ? "online" : "offline"
         },
@@ -86,7 +86,7 @@ function createEmptyResponseData() {
 function validate1lvl(mode, body) {
     // login, registration и тому подобные
     let { resdata, rp } = createEmptyResponseData();
-    const { userNameOrEmail, password, userName, confirmPassword, fullName, email} = body;
+    const { nickNameOrEmail, password, nickName, confirmPassword, fullName, email} = body;
     let info = "";
     let errorField = "";
 
@@ -107,17 +107,17 @@ function validate1lvl(mode, body) {
         }
     }
     switch ("") {
-        case userNameOrEmail:
+        case nickNameOrEmail:
             info = "Вы не ввели никнейм или почту";
-            errorField = "userNameOrEmail";
+            errorField = "nickNameOrEmail";
             break;
         case fullName:
             info = "Вы не ввели ваше имя";
             errorField = "fullName";
             break;
-        case userName:
+        case nickName:
             info = "Вы не ввели никнейм";
-            errorField = "userName";
+            errorField = "nickName";
             break;
         case email:
             info = "Вы не ввели почту";
@@ -201,7 +201,7 @@ function clearCookies(response, ...params) {
 function logout(request, response) {
     request.session.destroy((err) => {
         if (err) return console.log(err);
-        clearCookies(response, "userName", "fullName", "statusText", "avatarLink");
+        clearCookies(response, "nickName", "fullName", "statusText", "avatarLink");
         response.redirect("/");
     });
 }
@@ -272,27 +272,27 @@ app.get("/deleteAccount", function(request, response) {
 app.get("/logout", logout);
 
 app.post("/canIlogin", function (request, response) {
-    const { userNameOrEmail, password } = request.body;
-    let { resdata, rp } = validate1lvl("login", { userNameOrEmail, password });
+    const { nickNameOrEmail, password } = request.body;
+    let { resdata, rp } = validate1lvl("login", { nickNameOrEmail, password });
 
     if (rp.info) return response.json(resdata);
 
-    entities.findOne({ isRoom: false, $or: [{ userName: userNameOrEmail }, { email: userNameOrEmail }]})
+    entities.findOne({ isRoom: false, $or: [{ nickName: nickNameOrEmail }, { email: nickNameOrEmail }]})
     .then((result) => {
         if (!result) {
-            resdata.reply.errorField = "userNameOrEmail";
+            resdata.reply.errorField = "nickNameOrEmail";
             rp.info = "Пользователь с указанными логином или почтой не найден";
         } else if (result.password !== sha256(password)) {
             resdata.reply.errorField = "passwordLogin";
             rp.info = "Неверный пароль";
         } else if (!result.emailConfirmed) {
-            resdata.reply.errorField = "userNameOrEmail";
+            resdata.reply.errorField = "nickNameOrEmail";
             rp.info = "Вы не перешли по ссылке из письма (не подтвердили почту). Если письма нет даже в папке спам, то обращайтесь к администратору.";
         }
         if (rp.info) return;
 
         request.session.authInfo = resdata.reply = result;
-        fillCookies(response, result, "userName", "fullName", "statusText", "avatarLink", "rooms");
+        fillCookies(response, result, "nickName", "fullName", "statusText", "avatarLink", "rooms");
         rp.isError = false;
         rp.info = "Успешная авторизация";
     }).catch((err) => {
@@ -314,7 +314,7 @@ app.get("/finishRegistration", function (request, response) {
     .then((result) => {
         if (!result) return;
         request.session.authInfo = result;
-        fillCookies(response, result, "userName", "fullName", "statusText", "avatarLink", "rooms");
+        fillCookies(response, result, "nickName", "fullName", "statusText", "avatarLink", "rooms");
         page = "/chat";
         return entities.updateOne( { _id }, {
             // $addToSet: { rooms: "global" },
@@ -331,16 +331,16 @@ app.get("/finishRegistration", function (request, response) {
 });
 // TODO: Сделать,чтобы сессия привязывалась к ip, что помешает использовать одни и те же сессионные куки на разных устройствах
 app.post("/canIregister", function (request, response) {
-    const { userName, password, confirmPassword, fullName, email } = request.body;
-    let { resdata, rp } = validate1lvl("register", { userName, password, confirmPassword, fullName, email });
+    const { nickName, password, confirmPassword, fullName, email } = request.body;
+    let { resdata, rp } = validate1lvl("register", { nickName, password, confirmPassword, fullName, email });
 
     if (rp.info) return response.json(resdata);
 
-    entities.findOne({isRoom: false, $or: [{ userName }, { email }] })
+    entities.findOne({isRoom: false, $or: [{ nickName }, { email }] })
     .then((result) => {
         const userProfile = {
             isRoom: false,
-            userName,
+            nickName,
             password: sha256(password),
             email,
             fullName,
@@ -358,8 +358,8 @@ app.post("/canIregister", function (request, response) {
         }
         let info;
         if (result.emailConfirmed) {
-            if (result.userName === userName) {
-                resdata.reply.errorField = "userName";
+            if (result.nickName === nickName) {
+                resdata.reply.errorField = "nickName";
                 info = "Этот никнейм занят.";
             } else {
                 // (result.email === email)
@@ -371,7 +371,7 @@ app.post("/canIregister", function (request, response) {
         }
         // Если нашёлся неподтверждённый аккаунт
         resdata.reply.errorField = "email";
-        if (result.userName === userName) {
+        if (result.nickName === nickName) {
             if (result.email === email) {
                 rp.info = "Аккаунт с указанными ником и почтой уже был создан, но не подтверждён. Мы отправим письмо повторно. Если вы его не получите, проверьте спам или укажите почту другого сервиса.";
             } else {
@@ -453,7 +453,7 @@ WSServer.on("connection", (connection, request) => {
                 // TODO: Проверять имеет ли пользователь право отправлять сообщения в этот чат
                 let message = {
                     room,
-                    authorID: authInfo.userName,
+                    authorID: authInfo.nickName,
                     text,
                     time: new Date(Date.now())
                 };
@@ -487,7 +487,7 @@ WSServer.on("connection", (connection, request) => {
                 break;
             case "loadListOfUsersInChat":
                 let results = {};
-                entities.find({rooms: room}, {projection: { userName:1, fullName:1 }})
+                entities.find({rooms: room}, {projection: { nickName:1, fullName:1 }})
                 .forEach(
                     (doc) => {
                         const { user, id } = createLiteAuthInfo(doc);

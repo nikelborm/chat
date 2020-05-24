@@ -18,7 +18,7 @@ class MyAccountInfo extends Component {
                     {/* TODO: Сделать чтобы можно выбрать свой онлайн и он ставился после задержки: offline, online, idle */}
                 </div>
                 <div className="name">
-                    <span id="myName" title={getCookie("userName") || "Error"}>
+                    <span id="myName" title={getCookie("nickName") || "Error"}>
                         {getCookie("fullName") || "Error"}{" "}
                     </span>
                     <i className="fa fa-angle-down"></i>

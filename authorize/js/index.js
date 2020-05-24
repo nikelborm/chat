@@ -27,7 +27,7 @@ tippy.setDefaultProps({
     trigger: "manual",
     theme: "error"
 });
-tippy([id("userName"), id("email")], { interactive: true });
+tippy([id("nickName"), id("email")], { interactive: true });
 
 id("signin").onclick = function () {
     changeActiveCard("signin", "signup");
@@ -46,7 +46,7 @@ id("signup").onclick = function () {
 id("form-signin").onsubmit = function (event) {
     event.preventDefault();
     const data = {
-        userNameOrEmail: id("userNameOrEmail").value,
+        nickNameOrEmail: id("nickNameOrEmail").value,
         password: id("passwordLogin").value
     };
     fetch(document.location.origin + "/canIlogin", {
@@ -85,7 +85,7 @@ id("form-signin").onsubmit = function (event) {
 id("form-signup").onsubmit = function (event) {
     event.preventDefault();
     const data = {
-        userName: id("userName").value,
+        nickName: id("nickName").value,
         password: id("passwordRegister").value,
         confirmPassword: id("confirmPassword").value,
         email: id("email").value,

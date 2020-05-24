@@ -28,26 +28,33 @@ class WindowArea extends Component {
         // activeChat: JSON.parse(getCookie("rooms")).length === 1 ? getCookie("rooms").slice(2,-2) : "",
         myRooms: ["global", "kolya_kun"],
         activeChat: "global",
-        knownUsers: {
-            longHexUserId0000000000000000: {
-                userName: "eva_tyan",
+        entities: {
+            // это данные о сущностях, с которыми приходилось сталкиваться
+            "5e81046b8aaba01b18c3e08c": {
+                nickName: "eva_tyan",
                 fullName: "Евангелина Рима",
                 statusText : "В сети",
                 avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
-                onlineStatus: "online",
-                rooms: ["global", "kolya_kun"] // Не все его комнаты, а только пересекающиеся cо мной
+                onlineStatus: "online"
+                // rooms: ["global", "kolya_kun"] // Не все его комнаты, а только пересекающиеся cо мной
             },
-            longHexUserId0000000000000001: {
-                userName: "kolya_kun",
+            "5e826790eeef65222c60cb20": {
+                nickName: "kolya_kun",
                 fullName: "Коля",
                 statusText : "В сети",
                 avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
                 onlineStatus: "online",
-                rooms: ["global", "eva_tyan"] // Не все его комнаты, а только пересекающиеся cо мной
-            }
-        },
-        roomsInfo : {
-            global: {
+                isHistoryDownloaded: true,
+                isHistoryDownloadingNow: false,
+                // rooms: ["global", "eva_tyan"] // Не все его комнаты, а только пересекающиеся cо мной
+            },
+            "5ec042332508d40843da029e": {
+                nickName : "global",
+                owner : "5e81046b8aaba01b18c3e08c",
+                fullName : "Глобальный чат",
+                regDate : new ISODate("2020-03-29T20:26:19.176Z"),
+                description : "добро пожаловать в спокойное, мирное и уютное место.",
+                avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
                 isExpanded: false,
                 isUsersDownloaded: true,
                 isUsersDownloadingNow: false,
@@ -55,59 +62,76 @@ class WindowArea extends Component {
                 isHistoryDownloadingNow: false,
                 isDirect: false,
                 isMuted: false
-            },
-            kolya_kun: {
-                isDirect: true,
-                isMuted: false,
-                isHistoryDownloaded: true,
-                isHistoryDownloadingNow: false,
-                userID: "longHexUserId0000000000000001",
-                userInfo: {
-                    userName: "kolya_kun",
-                    fullName: "Коля",
-                    statusText : "В сети",
-                    avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
-                    onlineStatus: "online",
-                    rooms: ["global"] // Не все его комнаты, а только пересекающиеся cо мной
-                } // Ссылка на пользователя в knownUsers
             }
         },
+        directChatsInfo: {
+            "5e826790eeef65222c60cb20" : this.state.knownUsers["5e826790eeef65222c60cb20"]
+        },
+        roomsInfo : {
+            "5ec042332508d40843da029e" : this.state.knownUsers["5ec042332508d40843da029e"]
+        },
         chatsHistory: {
-            global: {
-                longHexMessageId0000000000000000: {
-                    userInfo : {
-                        userName: "eva_tyan",
-                        fullName: "Евангелина Рима",
-                        statusText : "В сети",
-                        avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
-                        onlineStatus: "online",
-                        rooms: ["global"] // Не все его комнаты, а только пересекающиеся cо мной
-                    },// Вместо {} ссылка на knownUsers.longHexUserId0000000000000000
-                    userID: "longHexUserId0000000000000000",
-                    messageBody : ["qwe"], // Распарсенное сообщение text
-                    correctTime : "12 декабря 08:56" // Распарсенное время time
+            "5e826790eeef65222c60cb20": {
+                "5eca7e4337b3cc5b1e34278d" : {
+                    "author" : "5e81046b8aaba01b18c3e08c",
+                    "text" : "qwe1",
+                    "time" : ISODate("2021-04-23T21:08:56.855Z"),
+                    "to" : "5e826790eeef65222c60cb20"
+                },
+                "5ecabef837b3cc5b1e342ef7" : {
+                    "author" : "5e826790eeef65222c60cb20",
+                    "text" : "qwe2",
+                    "time" : ISODate("2023-05-26T21:08:56.855Z"),
+                    "to" : "5e81046b8aaba01b18c3e08c"
                 }
             },
-            kolya_kun: {
-                longHexMessageId0000000000000000qw: {
-                    userInfo: {
-                        userName: "kolya_kun",
-                        fullName: "Коля",
-                        statusText : "В сети",
-                        avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
-                        onlineStatus: "online",
-                        rooms: ["global"] // Не все его комнаты, а только пересекающиеся cо мной
-                    }, // Ссылка на пользователя в knownUsers
-                    userID: "longHexUserId0000000000000000",
-                    messageBody : ["qwsdsde"], // Распарсенное сообщение text
-                    correctTime : "кабря 08:56" // Распарсенное время time
+            "5ec042332508d40843da029e": {
+                "5e825fe8eeef65222c60cb1f" : {
+                    "author" : "5e81046b8aaba01b18c3e08c",
+                    "text" : "qweasdfsdf1",
+                    "time" : new ISODate("2020-03-30T21:08:56.855Z")
+                },
+                "5ecabfb537b3cc5b1e342f19" : {
+                    "author" : "5e826790eeef65222c60cb20",
+                    "text" : "qweasdfsdf2",
+                    "time" : new ISODate("2020-03-30T21:08:56.855Z")
                 }
             }
+            // global: {
+            //     longHexMessageId0000000000000000: {
+            //         userInfo : {
+            //             nickName: "eva_tyan",
+            //             fullName: "Евангелина Рима",
+            //             statusText : "В сети",
+            //             avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
+            //             onlineStatus: "online",
+            //             rooms: ["global"] // Не все его комнаты, а только пересекающиеся cо мной
+            //         },// Вместо {} ссылка на knownUsers.longHexUserId0000000000000000
+            //         userID: "longHexUserId0000000000000000",
+            //         messageBody : ["qwe"], // Распарсенное сообщение text
+            //         correctTime : "12 декабря 08:56" // Распарсенное время time
+            //     }
+            // },
+            // kolya_kun: {
+            //     longHexMessageId0000000000000000qw: {
+            //         userInfo: {
+            //             nickName: "kolya_kun",
+            //             fullName: "Коля",
+            //             statusText : "В сети",
+            //             avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
+            //             onlineStatus: "online",
+            //             rooms: ["global"] // Не все его комнаты, а только пересекающиеся cо мной
+            //         }, // Ссылка на пользователя в knownUsers
+            //         userID: "longHexUserId0000000000000000",
+            //         messageBody : ["qwsdsde"], // Распарсенное сообщение text
+            //         correctTime : "кабря 08:56" // Распарсенное время time
+            //     }
+            // }
         },
         usersInRooms: {
             global: {
                 longHexUserId0000000000000000: {
-                    userName: "eva_tyan",
+                    nickName: "eva_tyan",
                     fullName: "Евангелина Рима",
                     statusText : "В сети",
                     avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
@@ -115,7 +139,8 @@ class WindowArea extends Component {
                     rooms: ["global"] // Не все его комнаты, а только пересекающиеся cо мной
                 }// Вместо {} ссылка на knownUsers.longHexUserId0000000000000000
             }
-        }
+        },
+        muted: []
     };
     componentDidMount = () => {
         // if (this.state.activeChat) {

@@ -6,7 +6,7 @@ class Message extends Component {
         // Если ссылки на сообщения разные
         return !shallowEqual(this.props.userInfo, nextProps.userInfo) ||
         this.props.messageBody !== nextProps.messageBody;
-        // TODO: Сравнивать также параметры authorInfo и менять их если допустим чел только что сменил userName
+        // TODO: Сравнивать также параметры authorInfo и менять их если допустим чел только что сменил nickName
     }
     render() {
         const { userID, userInfo, correctTime, messageBody, myID } = this.props;
@@ -17,7 +17,7 @@ class Message extends Component {
             <li className={(userID === myID) ? "me" : ""}>
                 <div className="name">
                     <span className="">
-                        {userInfo.userName}
+                        {userInfo.nickName}
                     </span>
                 </div>
                 <div className="message">
