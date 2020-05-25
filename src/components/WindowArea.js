@@ -64,83 +64,47 @@ class WindowArea extends Component {
                 isMuted: false
             }
         },
-        directChatsInfo: {
-            "5e826790eeef65222c60cb20" : this.state.knownUsers["5e826790eeef65222c60cb20"]
+        directChats: {
+            "5e826790eeef65222c60cb20" : this.state.entities["5e826790eeef65222c60cb20"]
         },
-        roomsInfo : {
-            "5ec042332508d40843da029e" : this.state.knownUsers["5ec042332508d40843da029e"]
+        rooms : {
+            "5ec042332508d40843da029e" : this.state.entities["5ec042332508d40843da029e"]
         },
         chatsHistory: {
             "5e826790eeef65222c60cb20": {
                 "5eca7e4337b3cc5b1e34278d" : {
-                    "author" : "5e81046b8aaba01b18c3e08c",
-                    "text" : "qwe1",
-                    "time" : ISODate("2021-04-23T21:08:56.855Z"),
-                    "to" : "5e826790eeef65222c60cb20"
+                    authorId : "5e81046b8aaba01b18c3e08c",
+                    // text : "qwe1",
+                    // time : ISODate("2021-04-23T21:08:56.855Z"),
+                    messageBody : ["qwe1"], // Распарсенное сообщение text
+                    correctTime : "12 декабря 08:56" // Распарсенное время time
                 },
                 "5ecabef837b3cc5b1e342ef7" : {
-                    "author" : "5e826790eeef65222c60cb20",
-                    "text" : "qwe2",
-                    "time" : ISODate("2023-05-26T21:08:56.855Z"),
-                    "to" : "5e81046b8aaba01b18c3e08c"
+                    author : "5e826790eeef65222c60cb20",
+                    messageBody : ["qwe2"],
+                    correctTime : "13 декабря 08:56"
                 }
             },
             "5ec042332508d40843da029e": {
                 "5e825fe8eeef65222c60cb1f" : {
-                    "author" : "5e81046b8aaba01b18c3e08c",
-                    "text" : "qweasdfsdf1",
-                    "time" : new ISODate("2020-03-30T21:08:56.855Z")
+                    author : "5e81046b8aaba01b18c3e08c",
+                    messageBody : ["qweasdfsdf1"],
+                    correctTime : "14 декабря 08:56"
                 },
                 "5ecabfb537b3cc5b1e342f19" : {
-                    "author" : "5e826790eeef65222c60cb20",
-                    "text" : "qweasdfsdf2",
-                    "time" : new ISODate("2020-03-30T21:08:56.855Z")
+                    author : "5e826790eeef65222c60cb20",
+                    messageBody : ["qweasdfsdf2"],
+                    correctTime : "15 декабря 08:56"
                 }
             }
-            // global: {
-            //     longHexMessageId0000000000000000: {
-            //         userInfo : {
-            //             nickName: "eva_tyan",
-            //             fullName: "Евангелина Рима",
-            //             statusText : "В сети",
-            //             avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
-            //             onlineStatus: "online",
-            //             rooms: ["global"] // Не все его комнаты, а только пересекающиеся cо мной
-            //         },// Вместо {} ссылка на knownUsers.longHexUserId0000000000000000
-            //         userID: "longHexUserId0000000000000000",
-            //         messageBody : ["qwe"], // Распарсенное сообщение text
-            //         correctTime : "12 декабря 08:56" // Распарсенное время time
-            //     }
-            // },
-            // kolya_kun: {
-            //     longHexMessageId0000000000000000qw: {
-            //         userInfo: {
-            //             nickName: "kolya_kun",
-            //             fullName: "Коля",
-            //             statusText : "В сети",
-            //             avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
-            //             onlineStatus: "online",
-            //             rooms: ["global"] // Не все его комнаты, а только пересекающиеся cо мной
-            //         }, // Ссылка на пользователя в knownUsers
-            //         userID: "longHexUserId0000000000000000",
-            //         messageBody : ["qwsdsde"], // Распарсенное сообщение text
-            //         correctTime : "кабря 08:56" // Распарсенное время time
-            //     }
-            // }
         },
         usersInRooms: {
-            global: {
-                longHexUserId0000000000000000: {
-                    nickName: "eva_tyan",
-                    fullName: "Евангелина Рима",
-                    statusText : "В сети",
-                    avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
-                    onlineStatus: "online",
-                    rooms: ["global"] // Не все его комнаты, а только пересекающиеся cо мной
-                }// Вместо {} ссылка на knownUsers.longHexUserId0000000000000000
+            "5ec042332508d40843da029e": {
+                "5e826790eeef65222c60cb20" : this.state.entities["5e826790eeef65222c60cb20"],
+                "5e81046b8aaba01b18c3e08c" : this.state.entities["5e81046b8aaba01b18c3e08c"],
             }
         },
-        muted: []
+        muted: ["5e826790eeef65222c60cb20"]
     };
     componentDidMount = () => {
         // if (this.state.activeChat) {
