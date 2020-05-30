@@ -2,8 +2,9 @@ import React, { Component } from "react";
 import InputForm from "./InputForm";
 import MessagesList from "./MessagesList";
 import MyAccountInfo from "./MyAccountInfo";
+import DirectChatsManager from "./DirectChatsManager";
+import RoomsManager from "./RoomsManager";
 
-import ParticipantManager from "./ParticipantManager";
 import RightTabs from "../layout/RightTabs";
 import convertMessageTime from '../tools/convertMessageTime';
 import parseMessageBody from '../tools/parseMessageBody';
@@ -26,7 +27,6 @@ class WindowArea extends Component {
     state = {
         // myRooms: JSON.parse(getCookie("rooms")) ,
         // activeChat: JSON.parse(getCookie("rooms")).length === 1 ? getCookie("rooms").slice(2,-2) : "",
-        myRooms: ["global", "kolya_kun"],
         activeChat: "global",
         entities: {
             // это данные о сущностях, с которыми приходилось сталкиваться
@@ -60,16 +60,14 @@ class WindowArea extends Component {
                 isUsersDownloadingNow: false,
                 isHistoryDownloaded: true,
                 isHistoryDownloadingNow: false,
-                isDirect: false,
-                isMuted: false
             }
         },
-        directChats: {
-            "5e826790eeef65222c60cb20" : this.state.entities["5e826790eeef65222c60cb20"]
-        },
-        rooms : {
-            "5ec042332508d40843da029e" : this.state.entities["5ec042332508d40843da029e"]
-        },
+        directChats: [
+            "5e826790eeef65222c60cb20"
+        ],
+        rooms : [
+            "5ec042332508d40843da029e"
+        ],
         chatsHistory: {
             "5e826790eeef65222c60cb20": {
                 "5eca7e4337b3cc5b1e34278d" : {
@@ -78,6 +76,7 @@ class WindowArea extends Component {
                     // time : ISODate("2021-04-23T21:08:56.855Z"),
                     messageBody : ["qwe1"], // Распарсенное сообщение text
                     correctTime : "12 декабря 08:56" // Распарсенное время time
+                    // TODO: Проверку был ли парсинг сообщения можно сделать на основе наличия messageBody
                 },
                 "5ecabef837b3cc5b1e342ef7" : {
                     author : "5e826790eeef65222c60cb20",
@@ -99,12 +98,13 @@ class WindowArea extends Component {
             }
         },
         usersInRooms: {
-            "5ec042332508d40843da029e": {
-                "5e826790eeef65222c60cb20" : this.state.entities["5e826790eeef65222c60cb20"],
-                "5e81046b8aaba01b18c3e08c" : this.state.entities["5e81046b8aaba01b18c3e08c"],
-            }
+            "5ec042332508d40843da029e": [
+                "5e826790eeef65222c60cb20",
+                "5e81046b8aaba01b18c3e08c"
+            ]
         },
         muted: ["5e826790eeef65222c60cb20"]
+        // TODO: Вынести isExpanded в такой же массив как и muted
     };
     componentDidMount = () => {
         // if (this.state.activeChat) {
@@ -260,11 +260,11 @@ class WindowArea extends Component {
     };
     render() {
         // TODO: Убрать лишние ререндеры у компонентов
-        const {chatsHistory, usersInRooms, myRooms, activeChat, roomsInfo} = this.state;
+        const {chatsHistory, usersInRooms, rooms, directChats,  activeChat, muted, entities} = this.state;
         return (
             <div className="window-area">
                 <div className="conversation-list">
-                    <ParticipantManager
+                    {/* <ParticipantManager
                         usersInRooms={usersInRooms}
                         myRooms={myRooms}
                         roomsInfo={roomsInfo}
@@ -272,7 +272,29 @@ class WindowArea extends Component {
                         onMuteChange={this.onMuteChange}
                         onDeleteChat={this.onDeleteChat}
                         onSelectChat={this.onSelectChat}
-                    />
+                    /> */}
+                    <ul>
+                        {/* TODO: Добавить инпут для добавления нового чата */}
+                        <DirectChatsManager
+                            directChats={directChats}
+                            muted={muted}
+                            entities={entities}
+                            onMuteChange={this.onMuteChange}
+                            onDeleteChat={this.onDeleteChat}
+                            onSelectChat={this.onSelectChat}
+                        />
+
+                        <RoomsManager
+                            rooms={rooms}
+                            muted={muted}
+                            entities={entities}
+                            usersInRooms={usersInRooms}
+                            onMuteChange={this.onMuteChange}
+                            onDeleteChat={this.onDeleteChat}
+                            onSelectChat={this.onSelectChat}
+                            onExpandChange={this.onExpandChange}
+                        />
+                    </ul>
                     <MyAccountInfo />
                 </div>
                 <div className="chat-area">
