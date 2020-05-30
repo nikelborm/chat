@@ -3,7 +3,7 @@ import React, { Component } from "react";
 import InputForm from "./InputForm";
 import MessagesList from "./MessagesList";
 import MyAccountInfo from "./MyAccountInfo";
-import Chats from "./Chats";
+import ChatsList from "./ChatsList";
 
 import RightTabs from "../layout/RightTabs";
 import convertMessageTime from '../tools/convertMessageTime';
@@ -51,7 +51,7 @@ class WindowArea extends Component {
                 nickName : "global",
                 owner : "5e81046b8aaba01b18c3e08c",
                 fullName : "Глобальный чат",
-                regDate : new ISODate("2020-03-29T20:26:19.176Z"),
+                // regDate : new ISODate("2020-03-29T20:26:19.176Z"),
                 description : "добро пожаловать в спокойное, мирное и уютное место.",
                 avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
                 isExpanded: false,
@@ -264,7 +264,7 @@ class WindowArea extends Component {
             <div className="window-area">
                 <div className="conversation-list">
                     {/* TODO: Добавить инпут для добавления нового чата */}
-                    <Chats
+                    <ChatsList
                         rooms={rooms}
                         directChats={directChats}
                         muted={muted}
