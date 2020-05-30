@@ -1,9 +1,9 @@
+// @ts-nocheck
 import React, { Component } from "react";
 import InputForm from "./InputForm";
 import MessagesList from "./MessagesList";
 import MyAccountInfo from "./MyAccountInfo";
-import DirectChatsManager from "./DirectChatsManager";
-import RoomsManager from "./RoomsManager";
+import Chats from "./Chats";
 
 import RightTabs from "../layout/RightTabs";
 import convertMessageTime from '../tools/convertMessageTime';
@@ -36,7 +36,7 @@ class WindowArea extends Component {
                 statusText : "В сети",
                 avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
                 onlineStatus: "online"
-                // rooms: ["global", "kolya_kun"] // Не все его комнаты, а только пересекающиеся cо мной
+                // Возможно тут будет больше каких-либо данных, ведь это всё таки мой профиль и this.myID мы знаем
             },
             "5e826790eeef65222c60cb20": {
                 nickName: "kolya_kun",
@@ -45,8 +45,7 @@ class WindowArea extends Component {
                 avatarLink : "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif",
                 onlineStatus: "online",
                 isHistoryDownloaded: true,
-                isHistoryDownloadingNow: false,
-                // rooms: ["global", "eva_tyan"] // Не все его комнаты, а только пересекающиеся cо мной
+                isHistoryDownloadingNow: false
             },
             "5ec042332508d40843da029e": {
                 nickName : "global",
@@ -264,37 +263,19 @@ class WindowArea extends Component {
         return (
             <div className="window-area">
                 <div className="conversation-list">
-                    {/* <ParticipantManager
+                    {/* TODO: Добавить инпут для добавления нового чата */}
+                    <Chats
+                        rooms={rooms}
+                        directChats={directChats}
+                        muted={muted}
+                        entities={entities}
                         usersInRooms={usersInRooms}
-                        myRooms={myRooms}
-                        roomsInfo={roomsInfo}
-                        onExpandChange={this.onExpandChange}
+
                         onMuteChange={this.onMuteChange}
+                        onExpandChange={this.onExpandChange}
                         onDeleteChat={this.onDeleteChat}
                         onSelectChat={this.onSelectChat}
-                    /> */}
-                    <ul>
-                        {/* TODO: Добавить инпут для добавления нового чата */}
-                        <DirectChatsManager
-                            directChats={directChats}
-                            muted={muted}
-                            entities={entities}
-                            onMuteChange={this.onMuteChange}
-                            onDeleteChat={this.onDeleteChat}
-                            onSelectChat={this.onSelectChat}
-                        />
-
-                        <RoomsManager
-                            rooms={rooms}
-                            muted={muted}
-                            entities={entities}
-                            usersInRooms={usersInRooms}
-                            onMuteChange={this.onMuteChange}
-                            onDeleteChat={this.onDeleteChat}
-                            onSelectChat={this.onSelectChat}
-                            onExpandChange={this.onExpandChange}
-                        />
-                    </ul>
+                    />
                     <MyAccountInfo />
                 </div>
                 <div className="chat-area">
