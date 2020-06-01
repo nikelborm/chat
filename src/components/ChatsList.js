@@ -27,12 +27,12 @@ class ChatsList extends Component {
         ));
         return (
             <ul>
-                <li className="item header">
+                <li className="item header" key="directChatsHeader">
                     <i className="fa fa-list-alt"></i>
                     <span>Прямые чаты</span>
                 </li>
                 { directChatsComponents }
-                <li className="item header">
+                <li className="item header" key="roomsHeader">
                     <i className="fa fa-list-alt"></i>
                     <span>Комнаты</span>
                 </li>

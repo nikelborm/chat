@@ -19,10 +19,10 @@ class Room extends Component {
                         users={users}
                         entities={entities}
                         isExpanded={isExpanded}
-                        isDownloaded={entities[id].isDownloaded}
+                        isDownloaded={entities[id].isUsersDownloaded}
                     />
                     {/* TODO: нормально отображать подсказку */}
-                    {entities[id].isUsersDownloaded && <strong>Загружается список участников комнаты...</strong>}
+                    {entities[id].isHistoryDownloadingNow && <strong>Загружается список участников комнаты...</strong>}
                 </ul>
             </Fragment>
         );
