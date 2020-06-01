@@ -1,4 +1,11 @@
 /* eslint-disable default-case */
+const { validate1lvl, validate2lvl } = require("./functions/validate");
+const { createEmptyResponseData } = require("./functions/createEmptyResponseData");
+const { intersection } = require("./functions/intersection");
+const { randomString } = require("./functions/randomString");
+const { isAllStrings } = require("./functions/isAllStrings");
+const { redirectIfNecessary } = require("./functions/redirectIfNecessary");
+
 const express = require("express");
 const favicon = require("express-favicon");
 const mongodb = require("mongodb");
@@ -16,30 +23,6 @@ const WebSocket = require("ws"); // jshint ignore:line
 const sendmail = require("sendmail")({silent:true});
 const querystring = require("querystring");
 
-function isAllStrings(body) {
-    let result = 1;
-    for (let prop in body) {
-        result &= +(typeof body[prop] === "string");
-    }
-    return result;
-}
-function randomString(len) {
-    const chrs = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let str = "";
-    for (let i = 0; i < len; i++) {
-        str += chrs[Math.floor(Math.random() * chrs.length)];
-    }
-    return str;
-}
-function intersection(setA, setB) {
-    let _intersection = new Set();
-    for (let elem of setB) {
-        if (setA.has(elem)) {
-            _intersection.add(elem);
-        }
-    }
-    return _intersection;
-}
 function createHardAuthInfo(authInfo) {
     const { user: lite, id } = createLiteAuthInfo(authInfo);
     return {
@@ -72,85 +55,7 @@ function notifyAboutNewPersonInChat(newAuthInfo, room) {
         }
     );
 }
-function createEmptyResponseData() {
-    const resdata = {
-        handlerType: "logs",
-        report: {
-            isError: true,
-            info: ""
-        },
-        reply: {}
-    };
-    return {resdata, rp: resdata.report};
-}
-function validate1lvl(mode, body) {
-    // login, registration и тому подобные
-    let { resdata, rp } = createEmptyResponseData();
-    const { nickNameOrEmail, password, nickName, confirmPassword, fullName, email} = body;
-    let info = "";
-    let errorField = "";
 
-    if (!isAllStrings(body)) {
-        rp.info = "Неправильно составлен запрос";
-        return {resdata, rp: resdata.report};
-    }
-    if (mode === "register") {
-        if (password.length < 8) {
-            info = "Длина пароля должна быть от 8 символов";
-            errorField = "passwordRegister";
-        } else if (password.length > 40) {
-            info = "Длина пароля должна быть до 40 символов";
-            errorField = "passwordRegister";
-        } else if (confirmPassword !== password) {
-            info = "Пароли не совпадают";
-            errorField = "confirmPassword";
-        }
-    }
-    switch ("") {
-        case nickNameOrEmail:
-            info = "Вы не ввели никнейм или почту";
-            errorField = "nickNameOrEmail";
-            break;
-        case fullName:
-            info = "Вы не ввели ваше имя";
-            errorField = "fullName";
-            break;
-        case nickName:
-            info = "Вы не ввели никнейм";
-            errorField = "nickName";
-            break;
-        case email:
-            info = "Вы не ввели почту";
-            errorField = "email";
-            break;
-        case password:
-            info = "Вы не ввели пароль";
-            errorField = mode === "login" ? "passwordLogin" : "passwordRegister";
-    }
-
-    resdata.reply.errorField = errorField;
-    rp.info = info;
-    return {resdata, rp: resdata.report};
-}
-function validate2lvl(body, authInfo) {
-    // message, loadChatHistory и тому подобные
-    let { resdata, rp } = createEmptyResponseData();
-    const { room, text } = body;
-    let info = "";
-
-    if (!isAllStrings(body)) {
-        info = "Неправильно составлен запрос";
-    } else if (!authInfo) {
-        info = "Вы не авторизованы";
-    } else if (!authInfo.rooms.has(room)) {
-        info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
-    } else if (text === "") {
-        info = "Вы отправили пустое сообщение";
-    }
-
-    rp.info = info;
-    return {resdata, rp: resdata.report};
-}
 function sendToEveryoneKnown(messageBody, userRooms) {
     WSServer.clients.forEach(function (client) {
         // if hasIntersections
@@ -179,13 +84,6 @@ function onCloseWSconnection(connection) {
         sendToEveryoneKnown({handlerType: "isOffline", id}, connection.authInfo.rooms);
     } else {
         activeUsersCounter[id]--;
-    }
-}
-function redirectIfNecessary(target, request, response) {
-    if (!!request.session.authInfo !== (target === "/")) {
-        response.sendFile(path.join(__dirname, target === "/" ? "authorize" : "build", "index.html"));
-    } else {
-        response.redirect(target === "/" ? "/chat" : "/");
     }
 }
 function fillCookies(response, dataObj, ...params) {
@@ -264,6 +162,7 @@ const store = new RedisStorage({
 });
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+// TODO: Проверять не слишком ли большие данные, чтобы долго их не обрабатывать
 app.use(bodyParser.text());
 app.use(session({
     store,
@@ -466,6 +365,7 @@ WSServer.on("connection", (connection, request) => {
     });
     connection.on("message", (input) => {
         const { authInfo } = connection;
+        // TODO: Проверять не слишком ли большие данные, чтобы долго их не обрабатывать
         const { handlerType, room, text } = JSON.parse(input.toString());
         let { resdata, rp } = validate2lvl(handlerType === "message" ? { room, text } : { room }, authInfo);
         resdata.handlerType = handlerType;
