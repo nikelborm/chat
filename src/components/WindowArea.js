@@ -191,6 +191,7 @@ class WindowArea extends Component {
         this.setState((prevState) => {
             prevState.muted.delete(id);
             delete prevState.chatsHistory[id];
+            delete prevState.entities[id];
             if (isDirect) {
                 prevState.directChats.delete(id);
             } else {
