@@ -21,8 +21,7 @@ class Room extends Component {
                         isExpanded={isExpanded}
                         isDownloaded={entities[id].isUsersDownloaded}
                     />
-                    {/* TODO: нормально отображать подсказку */}
-                    {entities[id].isHistoryDownloadingNow && <strong>Загружается список участников комнаты...</strong>}
+                    {entities[id].isHistoryDownloadingNow && <li className="item tabbed"><i className="fa fa-sync"></i><span>Загрузка...</span></li>}
                 </ul>
             </Fragment>
         );

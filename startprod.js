@@ -4,7 +4,6 @@ const { createEmptyResponseData } = require("./functions/createEmptyResponseData
 const { intersection } = require("./functions/intersection");
 const { randomString } = require("./functions/randomString");
 const { isAllStrings } = require("./functions/isAllStrings");
-const { redirectIfNecessary } = require("./functions/redirectIfNecessary");
 
 const express = require("express");
 const favicon = require("express-favicon");
@@ -94,6 +93,14 @@ function fillCookies(response, dataObj, ...params) {
 function clearCookies(response, ...params) {
     for (const param of params) {
         response.clearCookie(param);
+    }
+}
+function redirectIfNecessary(target, request, response) {
+    if (!!request.session.authInfo !== (target === "/")) {
+        response.sendFile(path.join(__dirname, target === "/" ? "authorize" : "build", "index.html"));
+    }
+    else {
+        response.redirect(target === "/" ? "/chat" : "/");
     }
 }
 function logout(request, response) {
