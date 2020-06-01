@@ -1,10 +1,12 @@
 import React, { PureComponent } from "react";
+import { Controllers } from './controllers';
 
 class Participant extends PureComponent {
+    onSelectChat = ev => this.context.onSelectChat(ev, this.props.id);
     render() {
-        const { id, nickName, fullName, onlineStatus, onSelectChat } = this.props;
+        const { nickName, fullName, onlineStatus } = this.props;
         return (
-            <li className="item tabbed" onClick={onSelectChat.bind(undefined, id)}>
+            <li className="item tabbed" onClick={this.onSelectChat}>
                 <i className={"fa fa-circle-o " + onlineStatus}></i>
                 <span title={nickName}>
                     {fullName}
@@ -13,4 +15,5 @@ class Participant extends PureComponent {
         );
     }
 }
+Participant.contextType = Controllers;
 export default Participant;

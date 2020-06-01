@@ -205,13 +205,36 @@ function logout(request, response) {
         response.redirect("/");
     });
 }
-function shutdownOn(sig) {
-    process.on(sig, function() {
-        WSServer.close(() => {
-            console.log("Все WebSocket соединения успешно завершены");
+function shutdown() {
+    let haveErrors = false;
+    console.log("Exiting...\n\nClosing WebSocket server...");
+    clearInterval(cleaner);
+    WSServer.close((err) => {
+        if (err) {console.log(err);haveErrors = true;}
+        console.log("WebSocket server closed.\n\nClosing Redis connection...");
+        redisClient.quit((err) => {
+            if (err) {console.log(err);haveErrors = true;}
+            console.log('Redis connection closed.\n\nClosing MongoDb connection...');
+            if (dbClient) {
+                dbClient.close(false, (err) => {
+                    if (err) {console.log(err);haveErrors = true;}
+                    console.log('MongoDb connection closed.\n\nClosing http server...');
+                    if (server.listening) {
+                        server.close((err) => {
+                            if (err) {console.log(err);haveErrors = true;}
+                            console.log('Http server closed.\n');
+                            process.exit(~~haveErrors);
+                        });
+                    } else {
+                        console.log('Http server not started.\n');
+                        process.exit(1);
+                    }
+                });
+            } else {
+                console.log('MongoDb not started.\n\nClosing http server...\nHttp server not started.');
+                process.exit(1);
+            }
         });
-        dbClient.close();
-        process.exit();
     });
 }
 function deleteEntityById(id) {
@@ -235,8 +258,9 @@ let messages;
 let activeUsersCounter = {};
 
 const app = express();
+const redisClient = redis.createClient(redisLink);
 const store = new RedisStorage({
-    client: redis.createClient(redisLink)
+    client: redisClient
 });
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -523,14 +547,14 @@ WSServer.on("connection", (connection, request) => {
                 // Здесь загружается список всех прямых чатов с друзьями запрашивающего
                 break;
             case "loadListOfMyRooms":
-                // загружать список именно комнат в которых я состою
+                // TODO: загружать список именно комнат в которых я состою
                 break;
             case "loadStartupData":
-                // loadListOfDirectChats, loadListOfMyRooms, loadFilteredAuthInfoDataOfMe
+                // TODO: loadListOfDirectChats, loadListOfMyRooms, loadFilteredAuthInfoDataOfMe
         }
     });
 });
-setInterval(() => {
+const cleaner = setInterval(() => {
     // Проверка на то, оставлять ли соединение активным
     WSServer.clients.forEach((connection) => {
         // Если соединение мертво, завершить
@@ -548,8 +572,11 @@ const mongoClient = new mongodb.MongoClient(mongoLink, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 });
-mongoClient.connect(function (err, client) {
-    if (err) return console.log(err);
+mongoClient.connect((err, client) => {
+    if (err) {
+        console.log(err);
+        return shutdown();
+    }
 
     dbClient = client;
     entities = client.db().collection("entities");
@@ -558,5 +585,5 @@ mongoClient.connect(function (err, client) {
         console.log("Сервер слушает");
     });
 });
-shutdownOn("SIGINT");
-shutdownOn("SIGTERM");
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);

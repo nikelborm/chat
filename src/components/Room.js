@@ -4,8 +4,7 @@ import ParticipantsList from "./ParticipantsList";
 
 class Room extends Component {
     render() {
-        const { id, muted, entities, usersInRooms, onExpandChange, onMuteChange, onDeleteChat, onSelectChat } = this.props;
-        const isExpanded = entities[id].isExpanded;
+        const { id, entities, users, isExpanded, isMuted } = this.props;
         return (
             <Fragment>
                 <RoomHeader
@@ -13,19 +12,18 @@ class Room extends Component {
                     nickName={entities[id].nickName}
                     fullName={entities[id].fullName}
                     isExpanded={isExpanded}
-                    isMuted={muted.includes(id)}
-
-                    onSelectChat={onSelectChat}
-                    onExpandChange={onExpandChange}
-                    onDeleteChat={onDeleteChat}
-                    onMuteChange={onMuteChange}
+                    isMuted={isMuted}
                 />
-                <ParticipantsList
-                    users={usersInRooms[id]}
-                    entities={entities}
-                    isExpanded={isExpanded}
-                    onSelectChat={onSelectChat}
-                />
+                <ul className={isExpanded ? "" : "hidden"}>
+                    <ParticipantsList
+                        users={users}
+                        entities={entities}
+                        isExpanded={isExpanded}
+                        isDownloaded={entities[id].isDownloaded}
+                    />
+                    {/* TODO: нормально отображать подсказку */}
+                    {entities[id].isUsersDownloaded && <strong>Загружается список участников комнаты...</strong>}
+                </ul>
             </Fragment>
         );
     }

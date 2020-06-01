@@ -9,6 +9,7 @@ import RightTabs from "../layout/RightTabs";
 import convertMessageTime from '../tools/convertMessageTime';
 import parseMessageBody from '../tools/parseMessageBody';
 import getCookie from "../tools/getCookie";
+import { Controllers } from './controllers';
 // import loader from "../tools/loader";
 
 // const whyDidYouRender = require("@welldone-software/why-did-you-render");
@@ -23,11 +24,17 @@ class WindowArea extends Component {
         this.isActiveChatHistoryLoaded = true;
         this.isUsersListInRoomDownloaded = false;
         this.myID = getCookie("myID") || "";
+        this.controllers = {
+            onMuteChange: this.onMuteChange,
+            onExpandChange: this.onExpandChange,
+            onDeleteChat: this.onDeleteChat,
+            onSelectChat: this.onSelectChat
+        }
     }
     state = {
         // myRooms: JSON.parse(getCookie("rooms")) ,
         // activeChat: JSON.parse(getCookie("rooms")).length === 1 ? getCookie("rooms").slice(2,-2) : "",
-        activeChat: "global",
+        activeChat: "", // По умолчанию пусто, но иначе id чата
         entities: {
             // это данные о сущностях, с которыми приходилось сталкиваться
             "5e81046b8aaba01b18c3e08c": {
@@ -58,15 +65,15 @@ class WindowArea extends Component {
                 isUsersDownloaded: true,
                 isUsersDownloadingNow: false,
                 isHistoryDownloaded: true,
-                isHistoryDownloadingNow: false,
+                isHistoryDownloadingNow: false
             }
         },
-        directChats: [
+        directChats: new Set([
             "5e826790eeef65222c60cb20"
-        ],
-        rooms : [
+        ]),
+        rooms : new Set([
             "5ec042332508d40843da029e"
-        ],
+        ]),
         chatsHistory: {
             "5e826790eeef65222c60cb20": {
                 "5eca7e4337b3cc5b1e34278d" : {
@@ -97,13 +104,15 @@ class WindowArea extends Component {
             }
         },
         usersInRooms: {
-            "5ec042332508d40843da029e": [
+            "5ec042332508d40843da029e": new Set([
                 "5e826790eeef65222c60cb20",
                 "5e81046b8aaba01b18c3e08c"
-            ]
+            ])
         },
-        muted: ["5e826790eeef65222c60cb20"]
-        // TODO: Вынести isExpanded в такой же массив как и muted
+        muted: new Set([
+            "5e826790eeef65222c60cb20"
+        ])
+        // TODO: Вынести isExpanded в такой же Set как и muted
     };
     componentDidMount = () => {
         // if (this.state.activeChat) {
@@ -124,15 +133,20 @@ class WindowArea extends Component {
         //     });
         // }
     };
-    onSelectChat = async (room) => {
-        console.log('onSelectChat: ', room);
+    onSelectChat = async (event, id) => {
+        event.stopPropagation();
+        console.log('onSelectChat: ', this.state.entities[id].nickName);
         // TODO: Загрузка сообщений по конкретному чату
         // А после добавление их и новой активной комнаты в state
-        if (this.state.roomsInfo[room].isHistoryDownloadingNow) {
+        if (this.state.entities[id].isHistoryDownloadingNow) {
             // вроде ничего не должны делать
             return;
         }
-        if (!this.state.roomsInfo[room].isHistoryDownloaded) {
+        if (this.state.entities[id].isHistoryDownloaded) {
+            // TODO: Показать историю
+
+        } else {
+            // TODO: Скачать историю чата
             // const {reply, report} = await loader("/загрузить историю конкретного чата", { room });
             // if (report.isError) {
             //     // TODO: Добавить обработку ошибок (можно с TIPPY)
@@ -143,35 +157,48 @@ class WindowArea extends Component {
             //         return prevState;
             //     });
             // }
-        } else {
-
         }
+        // Устанавливаем активный чат
         this.setState((prevState) => {
-            prevState.activeChat = room;
+            prevState.activeChat = id;
             return prevState;
         });
 
     };
-    onExpandChange = (room) => {
-        console.log('onExpandChange: ', room);
-        // TODO: Загрузка пользователей по конкретному чату
-        // isExpanded
+    onExpandChange = (event, id) => {
+        event.stopPropagation();
+        console.log('onExpandChange: ', this.state.entities[id].nickName);
+        // TODO: В случае, если открывается впервые, загружать пользователей по конкретному чату
         this.setState((prevState) => {
-            prevState.roomsInfo[room].isExpanded = !prevState.roomsInfo[room].isExpanded;
+            prevState.entities[id].isExpanded = !prevState.entities[id].isExpanded;
             return prevState;
         });
     };
-    onMuteChange = (room) => {
-        console.log('onMuteChange: ', room);
-        // TODO: Загрузка пользователей по конкретному чату
-        // isMuted
+    onMuteChange = (event, id, isMutedNow)  => {
+        event.stopPropagation();
+        console.log('onMuteChange: ', this.state.entities[id].nickName);
+        // TODO: Менять состояние только после отправки изменений на сервер
         this.setState((prevState) => {
-            prevState.roomsInfo[room].isMuted = !prevState.roomsInfo[room].isMuted;
+            prevState.muted[isMutedNow ? "delete" : "add"](id);
             return prevState;
         });
     };
-    onDeleteChat = (room) => {
-        console.log('onDeleteChat: ', room);
+    onDeleteChat = (event, id, isDirect) => {
+        event.stopPropagation();
+        console.log('onDeleteChat: ', this.state.entities[id].nickName);
+        // TODO: Уточнять, а точно ли он хочет его удалить
+        // TODO: После этого отправлять запрос на сервер
+        this.setState((prevState) => {
+            prevState.muted.delete(id);
+            delete prevState.chatsHistory[id];
+            if (isDirect) {
+                prevState.directChats.delete(id);
+            } else {
+                prevState.rooms.delete(id);
+                delete prevState.usersInRooms[id];
+            }
+            return prevState;
+        });
     };
     createOrRespawnWebSocket = () => {
         const loc = document.location;
@@ -259,23 +286,20 @@ class WindowArea extends Component {
     };
     render() {
         // TODO: Убрать лишние ререндеры у компонентов
-        const {chatsHistory, usersInRooms, rooms, directChats,  activeChat, muted, entities} = this.state;
+        const { chatsHistory, usersInRooms, rooms, directChats,  activeChat, muted, entities} = this.state;
         return (
             <div className="window-area">
                 <div className="conversation-list">
                     {/* TODO: Добавить инпут для добавления нового чата */}
-                    <ChatsList
-                        rooms={rooms}
-                        directChats={directChats}
-                        muted={muted}
-                        entities={entities}
-                        usersInRooms={usersInRooms}
-
-                        onMuteChange={this.onMuteChange}
-                        onExpandChange={this.onExpandChange}
-                        onDeleteChat={this.onDeleteChat}
-                        onSelectChat={this.onSelectChat}
-                    />
+                    <Controllers.Provider value={this.controllers} >
+                        <ChatsList
+                            rooms={rooms}
+                            directChats={directChats}
+                            muted={muted}
+                            entities={entities}
+                            usersInRooms={usersInRooms}
+                        />
+                    </Controllers.Provider>
                     <MyAccountInfo />
                 </div>
                 <div className="chat-area">

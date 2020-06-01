@@ -4,22 +4,22 @@
   "private": true,
   "dependencies": {
     "@tippy.js/react": "3.1.0",
-    "@welldone-software/why-did-you-render": "^4.0.5",
-    "connect-redis": "^4.0.3",
-    "cookie-parser": "^1.4.4",
+    "@welldone-software/why-did-you-render": "^4.2.5",
+    "connect-redis": "^4.0.4",
+    "cookie-parser": "^1.4.5",
     "express": "^4.17.1",
     "express-favicon": "^2.0.1",
-    "express-session": "^1.17.0",
-    "mongodb": "^3.4.1",
+    "express-session": "^1.17.1",
+    "mongodb": "^3.5.8",
     "querystring": "^0.2.0",
     "redis": "^2.8.0",
     "sendmail": "^1.6.1",
     "sha256": "^0.2.0",
-    "ws": "^7.2.1"
+    "ws": "^7.3.0"
   },
   "scripts": {
     "build": "react-scripts build",
-    "start_production_server": "node startprod.js",
+    "start_production_server": "node startprod.js --trace-deprecation",
     "start_development_server": "set PORT=3001 && react-scripts start",
     "build_with_profiling": "react-scripts build \"--profile\""
   },
@@ -43,11 +43,11 @@
     ]
   },
   "devDependencies": {
-    "react-strap": "0.0.1",
-    "react-scripts": "^3.3.0",
-    "react": "^16.12.0",
-    "react-dom": "^16.12.0",
-    "jshint": "^2.11.0"
+    "jshint": "^2.11.1",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "react-scripts": "^3.4.1",
+    "react-strap": "0.0.1"
   },
   "homepage": "chat/",
   "proxy": "http://localhost:3000/"

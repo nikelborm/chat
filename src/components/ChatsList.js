@@ -4,33 +4,25 @@ import DirectChat from "./DirectChat";
 
 class ChatsList extends Component {
     render() {
-        const { rooms, directChats, muted, entities, usersInRooms, onMuteChange, onExpandChange, onDeleteChat, onSelectChat } = this.props;
-        const directChatsComponents = directChats.map(id => (
+        const { rooms, directChats, muted, entities, usersInRooms } = this.props;
+        const directChatsComponents = Array.from(directChats, id => (
             <DirectChat
                 key={id}
                 id={id}
-                isMuted={muted.includes(id)}
+                isMuted={muted.has(id)}
                 nickName={entities[id].nickName}
                 fullName={entities[id].fullName}
                 onlineStatus={entities[id].onlineStatus}
-
-                onMuteChange={onMuteChange}
-                onDeleteChat={onDeleteChat}
-                onSelectChat={onSelectChat}
             />
         ));
-        const roomsComponents = rooms.map(id => (
+        const roomsComponents = Array.from(rooms, id => (
             <Room
                 key={id}
                 id={id}
-                muted={muted}
+                isMuted={muted.has(id)}
+                isExpanded={entities[id].isExpanded}
                 entities={entities}
-                usersInRooms={usersInRooms}
-
-                onExpandChange={onExpandChange}
-                onMuteChange={onMuteChange}
-                onDeleteChat={onDeleteChat}
-                onSelectChat={onSelectChat}
+                users={usersInRooms[id]}
             />
         ));
         return (
