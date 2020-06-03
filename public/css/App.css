@@ -133,7 +133,7 @@ b{
 .tabbed.item {
 	padding-left: 20px;
 }
-.item:not(.tabbed):not(.header) {
+.item:not(.header) {
 	cursor: pointer;
 }
 .item:hover,
