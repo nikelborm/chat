@@ -1,23 +1,20 @@
-import React, { Component } from "react";
-import shallowEqual from "../tools/shallowEqual";
+import React, { PureComponent } from "react";
+// import shallowEqual from "../tools/shallowEqual";
 
-class Message extends Component {
-    shouldComponentUpdate(nextProps) {
-        // Если ссылки на сообщения разные
-        return !shallowEqual(this.props.userInfo, nextProps.userInfo) ||
-        this.props.messageBody !== nextProps.messageBody;
-        // TODO: Сравнивать также параметры authorInfo и менять их если допустим чел только что сменил nickName
-    }
+class Message extends PureComponent {
+    // shouldComponentUpdate(nextProps) {
+    //     // Если ссылки на сообщения разные
+    //     return !shallowEqual(this.props.userInfo, nextProps.userInfo) ||
+    //     this.props.messageBody !== nextProps.messageBody;
+    // }
     render() {
-        const { userID, userInfo, correctTime, messageBody, myID } = this.props;
-        // TODO: Сделать чтобы имена пользователя и сообщения можно было редактировать
-        // В принципе компонент уже готов к этому (Реализуется на сервере)
+        const { authorID, myID, nickName, correctTime, messageBody } = this.props;
         // TODO: Сделать так, чтобы при наведении на div.name выводилась Tippy с инфой о пользователе
         return (
-            <li className={(userID === myID) ? "me" : ""}>
+            <li className={authorID === myID ? "me" : ""}>
                 <div className="name">
                     <span className="">
-                        {userInfo.nickName}
+                        {nickName}
                     </span>
                 </div>
                 <div className="message">

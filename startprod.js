@@ -382,6 +382,7 @@ WSServer.on("connection", (connection, request) => {
         switch (handlerType) {
             case "message":
                 // TODO: Проверять имеет ли пользователь право отправлять сообщения в этот чат
+                // TODO: Подкорректировать message
                 let message = {
                     room,
                     authorID: authInfo.nickName,

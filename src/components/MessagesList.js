@@ -1,6 +1,6 @@
 import React, { Component, createRef } from "react";
 import Message from "./Message";
-import shallowEqual from "../tools/shallowEqual";
+// import shallowEqual from "../tools/shallowEqual";
 
 class MessagesList extends Component {
     constructor(props) {
@@ -8,50 +8,45 @@ class MessagesList extends Component {
         this.chatList = createRef();
         this.down = createRef();
     }
-    shouldComponentUpdate(nextProps) {
-        return (
-            this.props.activeChat !== nextProps.activeChat ||
-            !shallowEqual(this.props.messages, nextProps.messages) ||
-            this.props.isLoading !== nextProps.isLoading
-        );
-        // TODO: Как добавлю редактирование сообщений, прокачать это
-    }
+    // shouldComponentUpdate(nextProps) {
+    //     return (
+    //         this.props.activeChat !== nextProps.activeChat ||
+    //         !shallowEqual(this.props.messages, nextProps.messages) ||
+    //         this.props.isLoading !== nextProps.isLoading
+    //     );
+    //     // TODO: Как добавлю редактирование сообщений, прокачать это
+    // }
     componentDidUpdate() {
         this.chatList.current.scrollTo(0, this.down.current.offsetTop);
     }
     render() {
-        const { messages, isLoading, activeChat, myID} = this.props;
+        const { history, entities, activeChat, myID, isDownloading} = this.props;
 
-        let info, ulWithMsgs;
+        let info, msgList;
 
         if (!activeChat) {
-            info = (<strong>Пожалуйста выберите чат для отображения</strong>);
-        } else if (isLoading) {
-            info = (<strong>Сообщения загружаются, пожалуйста подождите</strong>);
-        } else if ( !Object.keys(messages).length ){
-            info = (<strong>Сообщений пока нет, но вы можете это исправить!</strong>);
+            info = <strong>Пожалуйста выберите чат для отображения</strong>;
+        } else if (isDownloading) {
+            info = <strong>Сообщения загружаются, пожалуйста подождите</strong>;
+        } else if (activeChat === myID) {
+            info = <strong>Функцию сохранённых сообщений (избранное) мы скоро добавим)</strong>;
+        } else if ( !history ) { // history !== {}: либо undefined либо со свойствами
+            info = <strong>Сообщений нет. Напишите первым!</strong>;
         } else {
-            // longHexMessageId0000000000000000: {
-            //     authorInfo : {},// Вместо {} ссылка на knownUsers.longHexUserId0000000000000000
-            //     authorID: "longHexUserId0000000000000000",
-            //     text : ["qwe"], // Распарсенное сообщение
-            //     time : "12 декабря 08:56" // Распарсенное время
-            // }
-            ulWithMsgs = Object.keys(messages).map((msgId) => (
+            msgList = Object.keys(history).map(msgId => (
                 <Message
                     key={msgId}
+                    authorID={history[msgId].authorID}
                     myID={myID}
-                    userID={messages[msgId].userID}
-                    userInfo={messages[msgId].userInfo}
-                    messageBody={messages[msgId].messageBody}
-                    correctTime={messages[msgId].correctTime}
+                    nickName={entities[history[msgId].authorID].nickName}
+                    correctTime={history[msgId].correctTime}
+                    messageBody={history[msgId].messageBody}
                 />
             ));
-            ulWithMsgs = <ul> {ulWithMsgs} </ul>;
         }
         return (
             <div className="chat-list" ref={this.chatList}>
-                {info ? info : ulWithMsgs}
+                {info ? info : <ul> {msgList} </ul>}
                 <span ref={this.down}></span>
             </div>
         );

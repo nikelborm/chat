@@ -23,7 +23,8 @@ class WindowArea extends Component {
         this.cometCreated = false;
         this.isActiveChatHistoryLoaded = true;
         this.isUsersListInRoomDownloaded = false;
-        this.myID = getCookie("myID") || "";
+        // TODO: Починить поведение getCookie в этом случае
+        this.myID = /* getCookie("myID") || */"5e81046b8aaba01b18c3e08c";
         this.controllers = {
             onMuteChange: this.onMuteChange,
             onExpandChange: this.onExpandChange,
@@ -77,27 +78,28 @@ class WindowArea extends Component {
         chatsHistory: {
             "5e826790eeef65222c60cb20": {
                 "5eca7e4337b3cc5b1e34278d" : {
-                    authorId : "5e81046b8aaba01b18c3e08c",
+                    authorID : "5e81046b8aaba01b18c3e08c",
                     // text : "qwe1",
                     // time : ISODate("2021-04-23T21:08:56.855Z"),
+                    // messageBody должен быть иммутабельным
                     messageBody : ["qwe1"], // Распарсенное сообщение text
                     correctTime : "12 декабря 08:56" // Распарсенное время time
                     // TODO: Проверку был ли парсинг сообщения можно сделать на основе наличия messageBody
                 },
                 "5ecabef837b3cc5b1e342ef7" : {
-                    author : "5e826790eeef65222c60cb20",
+                    authorID : "5e826790eeef65222c60cb20",
                     messageBody : ["qwe2"],
                     correctTime : "13 декабря 08:56"
                 }
             },
             "5ec042332508d40843da029e": {
                 "5e825fe8eeef65222c60cb1f" : {
-                    author : "5e81046b8aaba01b18c3e08c",
+                    authorID : "5e81046b8aaba01b18c3e08c",
                     messageBody : ["qweasdfsdf1"],
                     correctTime : "14 декабря 08:56"
                 },
                 "5ecabfb537b3cc5b1e342f19" : {
-                    author : "5e826790eeef65222c60cb20",
+                    authorID : "5e826790eeef65222c60cb20",
                     messageBody : ["qweasdfsdf2"],
                     correctTime : "15 декабря 08:56"
                 }
@@ -191,7 +193,10 @@ class WindowArea extends Component {
         this.setState((prevState) => {
             prevState.muted.delete(id);
             delete prevState.chatsHistory[id];
-            delete prevState.entities[id];
+            // не удаляй пользователя из entities, так как он может может быть участником чата
+            if (prevState.activeChat === id) {
+                prevState.activeChat = "";
+            }
             if (isDirect) {
                 prevState.directChats.delete(id);
             } else {
@@ -309,9 +314,10 @@ class WindowArea extends Component {
                         <i className="fa fa-search"></i>
                     </div>
                     <MessagesList
-                        messages={activeChat ? chatsHistory[activeChat] : {}}
-                        isLoading={!this.isActiveChatHistoryLoaded}
+                        entities={entities}
+                        history={chatsHistory[activeChat]}
                         activeChat={activeChat}
+                        isDownloading={entities[activeChat]?.isHistoryDownloadingNow}
                         myID={this.myID}
                     />
                     <InputForm/>
