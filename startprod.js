@@ -47,11 +47,11 @@ function createLiteAuthInfo(authInfo) {
 function notifyAboutNewPersonInChat(newAuthInfo, room) {
     const { user, id } = createHardAuthInfo(newAuthInfo);
     sendToEveryoneInRoom(
-        {handlerType: "newPersonInChat", id, user, room},
-        (body, clientsrooms) => {
-            body.user.rooms = intersection(newAuthInfo.rooms, clientsrooms);
-            return body;
-        }
+        {handlerType: "newPersonInChat", id, user, room}
+        // ,(body, clientsrooms) => {
+        //     body.user.rooms = intersection(newAuthInfo.rooms, clientsrooms);
+        //     return body;
+        // }
     );
 }
 

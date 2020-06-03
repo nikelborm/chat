@@ -33,14 +33,14 @@ class MessagesList extends Component {
         } else if ( !history ) { // history !== {}: либо undefined либо со свойствами
             info = <strong>Сообщений нет. Напишите первым!</strong>;
         } else {
-            msgList = Object.keys(history).map(msgId => (
+            msgList = Object.keys(history).map(msgID => (
                 <Message
-                    key={msgId}
-                    authorID={history[msgId].authorID}
+                    key={msgID}
+                    authorID={history[msgID].authorID}
                     myID={myID}
-                    nickName={entities[history[msgId].authorID].nickName}
-                    correctTime={history[msgId].correctTime}
-                    messageBody={history[msgId].messageBody}
+                    nickName={entities[history[msgID].authorID].nickName}
+                    correctTime={history[msgID].correctTime}
+                    messageBody={history[msgID].messageBody}
                 />
             ));
         }

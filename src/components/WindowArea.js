@@ -21,8 +21,6 @@ class WindowArea extends Component {
     constructor(props) {
         super(props);
         this.cometCreated = false;
-        this.isActiveChatHistoryLoaded = true;
-        this.isUsersListInRoomDownloaded = false;
         // TODO: Починить поведение getCookie в этом случае
         this.myID = /* getCookie("myID") || */"5e81046b8aaba01b18c3e08c";
         this.controllers = {
@@ -225,10 +223,13 @@ class WindowArea extends Component {
                 case "message":
                     // TODO: Подумать о том, а загружен ли этот чат, чтобы в него что-нибудь вставлять?
                     this.setState((prevState) => {
-                        prevState.chatsHistory[data.room][data.messageId] = {
-                            author_info : prevState.knownUsers[data.authorId],
-                            text : parseMessageBody(data.text),
-                            time : convertMessageTime(data.time)
+                        if (!prevState.chatsHistory[data.chatID]) {
+                            prevState.chatsHistory[data.chatID] = {};
+                        }
+                        prevState.chatsHistory[data.chatID][data.msgID] = {
+                            authorID : data.authorID,
+                            messageBody : parseMessageBody(data.text),
+                            correctTime : convertMessageTime(data.time)
                         }
                         return prevState;
                     });
@@ -238,10 +239,9 @@ class WindowArea extends Component {
                     break;
                 case "isOnline":
                 case "isOffline":
-                    if (this.state.knownUsers[data.id]) {
+                    if (this.state.entities[data.userID]) {
                         this.setState((prevState) => {
-                            const status = data.handlerType === "isOnline" ? "online" : "offline";
-                            prevState.knownUsers[data.id].onlineStatus = status;
+                            prevState.entities[data.userID].onlineStatus = data.handlerType === "isOnline" ? "online" : "offline";
                             return prevState;
                         });
                     } else {
@@ -249,19 +249,14 @@ class WindowArea extends Component {
                         console.log("Новый пользователь, которого мы не знаем");
                     }
                     break;
-                case "newPersonInChat":
-                    if (this.state.knownUsers[data.id]) {
-                        this.setState((prevState) => {
-                            prevState.knownUsers[data.id].rooms.push(data.room);
-                            prevState.usersInRooms[data.room][data.id] = prevState.knownUsers[data.id];
-                            return prevState;
-                        });
-                    } else {
-                        this.setState((prevState) => {
-                            prevState.knownUsers[data.id] = data.user;
-                            return prevState;
-                        });
-                    }
+                case "newUserInRoom":
+                    this.setState((prevState) => {
+                        if (!this.state.entities[data.userID]) {
+                            prevState.entities[data.userID] = data.user;
+                        }
+                        prevState.usersInRooms[data.roomID].add(data.userID);
+                        return prevState;
+                    });
                     break;
                 default:
                     console.log("Неизвестный обработчик");
