@@ -8,7 +8,7 @@ import ChatsList from "./ChatsList";
 import RightTabs from "../layout/RightTabs";
 import convertMessageTime from '../tools/convertMessageTime';
 import parseMessageBody from '../tools/parseMessageBody';
-import getCookie from "../tools/getCookie";
+// import getCookie from "../tools/getCookie";
 import { Controllers } from './controllers';
 // import loader from "../tools/loader";
 
