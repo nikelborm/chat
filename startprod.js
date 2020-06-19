@@ -1,9 +1,12 @@
 /* eslint-disable default-case */
 const { validate1lvl, validate2lvl } = require("./functions/validate");
+const { createHardAuthInfo, createLiteAuthInfo } = require("./functions/compressAuthInfo");
 const { createEmptyResponseData } = require("./functions/createEmptyResponseData");
-const { intersection } = require("./functions/intersection");
 const { randomString } = require("./functions/randomString");
 const { isAllStrings } = require("./functions/isAllStrings");
+const { fillCookies } = require("./functions/fillCookies");
+const { logout } = require("./functions/logout");
+const { hasIntersections } = require("./functions/intersection");
 
 const express = require("express");
 const favicon = require("express-favicon");
@@ -22,93 +25,41 @@ const WebSocket = require("ws"); // jshint ignore:line
 const sendmail = require("sendmail")({silent:true});
 const querystring = require("querystring");
 
-function createHardAuthInfo(authInfo) {
-    const { user: lite, id } = createLiteAuthInfo(authInfo);
-    return {
-        user: {
-            ...lite,
-            statusText : authInfo.statusText,
-            avatarLink : authInfo.avatarLink
-        },
-        id
-    };
+function sendItToUsersWhoKnowMe({ rooms, directChats }, message) {
+    // Отправляет сообщение всем пользователям, кто сейчас подключён к вебсокету и кому это сообщение играет хоть какое либо значение,
+    // например онлайн статусы идут тем кто в моих прямых чатах или состоит в одной из моих групп, ведь я потенциально могу его увидеть
+    WSServer.clients.forEach(function (client) {
+        if ( directChats.has(client.authInfo.id) || hasIntersections(client.authInfo.rooms, rooms)) {
+            client.send(JSON.stringify(message));
+        }
+    });
 }
-function createLiteAuthInfo(authInfo) {
-    const id = authInfo._id.toString();
-    return {
-        user: {
-            nickName: authInfo.nickName,
-            fullName: authInfo.fullName,
-            onlineStatus: activeUsersCounter[id] ? "online" : "offline"
-        },
-        id
-    };
+function onCloseWSconnection(myAuthInfo) {
+    const userID = myAuthInfo._id;
+    if (activeUsersCounter[userID] === 1) {
+        delete activeUsersCounter[userID];
+        sendItToUsersWhoKnowMe(myAuthInfo, {handlerType: "offline", userID});
+    } else {
+        activeUsersCounter[userID]--;
+    }
 }
-function notifyAboutNewPersonInChat(newAuthInfo, room) {
-    const { user, id } = createHardAuthInfo(newAuthInfo);
-    sendToEveryoneInRoom(
-        {handlerType: "newPersonInChat", id, user, room}
-        // ,(body, clientsrooms) => {
-        //     body.user.rooms = intersection(newAuthInfo.rooms, clientsrooms);
-        //     return body;
-        // }
-    );
+function onAccessWSconnection(myAuthInfo) {
+    const userID = myAuthInfo._id;
+    if (!activeUsersCounter[userID]) {
+        activeUsersCounter[userID] = 1;
+        sendItToUsersWhoKnowMe(myAuthInfo, {handlerType: "online", userID});
+        // TODO: Отправить новичку инфу о том кто он?
+    } else {
+        activeUsersCounter[userID]++;
+    }
 }
 
-function sendToEveryoneKnown(messageBody, userRooms) {
-    WSServer.clients.forEach(function (client) {
-        // if hasIntersections
-        for (const elem of userRooms) {
-            if (client.authInfo.rooms.has(elem)){
-                client.send(JSON.stringify(messageBody));
-                return;
-            }
-        }
-    });
-}
-function sendToEveryoneInRoom(messageBody, room, preSend) {
-    WSServer.clients.forEach(function (client) {
-        if (client.authInfo.rooms.has(room)) {
-            if (preSend) {
-                messageBody = preSend(messageBody, client.authInfo.rooms);
-            }
-            client.send(JSON.stringify(messageBody));
-        }
-    });
-}
-function onCloseWSconnection(connection) {
-    const { _id: id } = connection.authInfo;
-    if (activeUsersCounter[id] === 1) {
-        delete activeUsersCounter[id];
-        sendToEveryoneKnown({handlerType: "isOffline", id}, connection.authInfo.rooms);
-    } else {
-        activeUsersCounter[id]--;
-    }
-}
-function fillCookies(response, dataObj, ...params) {
-    for (const param of params) {
-        response.cookie(param, typeof dataObj[param] === "string" ? dataObj[param] : JSON.stringify( dataObj[param] ));
-    }
-}
-function clearCookies(response, ...params) {
-    for (const param of params) {
-        response.clearCookie(param);
-    }
-}
 function redirectIfNecessary(target, request, response) {
     if (!!request.session.authInfo !== (target === "/")) {
-        response.sendFile(path.join(__dirname, target === "/" ? "authorize" : "build", "index.html"));
-    }
-    else {
+        response.sendFile(path.join(__dirname, target === "/" ? "authorize/index.min.html" : "build/index.html"));
+    } else {
         response.redirect(target === "/" ? "/chat" : "/");
     }
-}
-function logout(request, response) {
-    request.session.destroy((err) => {
-        if (err) return console.log(err);
-        clearCookies(response, "nickName", "fullName", "statusText", "avatarLink");
-        response.redirect("/");
-    });
 }
 function shutdown() {
     let haveErrors = false;
@@ -217,12 +168,13 @@ app.post("/canIlogin", function (request, response) {
             rp.info = "Неверный пароль";
         } else if (!result.emailConfirmed) {
             resdata.reply.errorField = "nickNameOrEmail";
-            rp.info = "Вы не перешли по ссылке из письма (не подтвердили почту). Если письма нет даже в папке спам, то обращайтесь к администратору.";
+            rp.info = "Вы не перешли по ссылке из письма (не подтвердили почту). Если письма нет даже в папке спам, обратитесь к администратору.";
         }
         if (rp.info) return;
 
-        request.session.authInfo = resdata.reply = result;
-        fillCookies(response, result, "nickName", "fullName", "statusText", "avatarLink", "rooms");
+        const { fullName, avatarLink } = request.session.authInfo = result;
+        resdata.reply = { fullName, avatarLink };
+        fillCookies(response, result, "nickName", "fullName", "statusText", "avatarLink", "_id");
         rp.isError = false;
         rp.info = "Успешная авторизация";
     }).catch((err) => {
@@ -240,14 +192,14 @@ app.get("/finishRegistration", function (request, response) {
     // @ts-ignore
     const _id = new ObjectId(id);
     let page = "/";
-    entities.findOne({ _id, secureToken })
+    entities.findOne({isRoom: false, _id, secureToken })
     .then((result) => {
         if (!result) return;
         request.session.authInfo = result;
-        fillCookies(response, result, "nickName", "fullName", "statusText", "avatarLink", "rooms");
+        fillCookies(response, result, "nickName", "fullName", "statusText", "avatarLink", "_id");
         page = "/chat";
         return entities.updateOne( { _id }, {
-            // $addToSet: { rooms: "global" },
+            // $addToSet: { rooms: тут можно добавить что-нибудь к любому массиву },
             $set: {
                 secureToken : randomString(32),
                 emailConfirmed: true
@@ -274,7 +226,7 @@ app.post("/canIregister", function (request, response) {
             password: sha256(password),
             email,
             fullName,
-            regDate: new Date(Date.now()),
+            regDate: new Date(),
             statusText: "В сети", // TODO: Подумать над этим
             avatarLink: "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif", // TODO: Добавить возможность выбора аватара
             rooms: [],
@@ -283,7 +235,7 @@ app.post("/canIregister", function (request, response) {
             secureToken: randomString(32),
             emailConfirmed: false
         };
-        if (!result) { // Не нашёл никаких результатов
+        if (!result) {
             return entities.insertOne(userProfile); // Возвращаем промис
         }
         let info;
@@ -301,15 +253,16 @@ app.post("/canIregister", function (request, response) {
         }
         // Если нашёлся неподтверждённый аккаунт
         resdata.reply.errorField = "email";
+        const pattern = (arg1, arg2 = "") => `Аккаунт с ${arg1} уже был создан, но не подтверждён. Мы отправим письмо повторно${arg2}. Если вы его не получите, проверьте спам или укажите почту другого сервиса.`;
         if (result.nickName === nickName) {
             if (result.email === email) {
-                rp.info = "Аккаунт с указанными ником и почтой уже был создан, но не подтверждён. Мы отправим письмо повторно. Если вы его не получите, проверьте спам или укажите почту другого сервиса.";
+                rp.info = pattern("указанными ником и почтой");
             } else {
-                rp.info = "Аккаунт с указанным ником, но другой почтой уже был создан, но не подтверждён. Мы отправим письмо повторно, но уже на новый адрес. Если вы его не получите, проверьте спам или укажите почту другого сервиса.";
+                rp.info = pattern("указанным ником, но другой почтой", ", но уже на новый адрес");
             }
         } else {
             // (result.email === email)
-            rp.info = "Аккаунт с этой почтой, но другим ником уже был создан, но не подтверждён. Мы отправим письмо повторно. Если вы его не получите, проверьте спам или укажите почту другого сервиса.";
+            rp.info = pattern("этой почтой, но другим ником");
         }
         return entities.findOneAndReplace({_id: result._id}, userProfile, {returnOriginal:false});
     }).then((result) => {
@@ -341,9 +294,13 @@ const WSServer = new WebSocket.Server({
     server
 });
 WSServer.on("connection", (connection, request) => {
+    connection.on("close", () => {
+        onCloseWSconnection(connection.authInfo);
+    });
     connection.isAlive = true;
     const cookies = cookie.parse(request.headers.cookie);
-    const sid = ""+cookieParser.signedCookie(cookies["connect.sid"], secretKey);
+    const sid = "" + cookieParser.signedCookie(cookies["connect.sid"], secretKey);
+    // TODO: Подумать над тем, что сообщение может начать обрабатываться до то того как редис вернёт запись для валидации
     store.get(sid, (err, session) => {
         if (err) console.log(err);
 
@@ -353,27 +310,23 @@ WSServer.on("connection", (connection, request) => {
             connection.send(JSON.stringify(resdata));
             connection.terminate();
         } else {
-            const { _id: id } = connection.authInfo = session.authInfo;
-            connection.authInfo.rooms = new Set(session.authInfo.rooms);
-            if (!activeUsersCounter[id]) {
-                activeUsersCounter[id] = 1;
-                sendToEveryoneKnown({handlerType: "isOnline", id}, connection.authInfo.rooms);
-                // TODO: Отправить новичку инфу о том кто он?
-            } else {
-                activeUsersCounter[id]++;
-            }
+            const { rooms, directChats, ...rest } = session.authInfo;
+            connection.authInfo = {
+                ...rest,
+                rooms: new Set(rooms),
+                directChats: new Set(directChats)
+            };
+            onAccessWSconnection(connection.authInfo);
         }
     });
     connection.on("pong", () => {
         connection.isAlive = true;
     });
-    connection.on("close", () => {
-        onCloseWSconnection(connection);
-    });
     connection.on("message", (input) => {
         const { authInfo } = connection;
         // TODO: Проверять не слишком ли большие данные, чтобы долго их не обрабатывать
-        const { handlerType, room, text } = JSON.parse(input.toString());
+        const { handlerType, room, text, to } = JSON.parse(input.toString());
+        console.log('JSON.parse(input.toString());: ', JSON.parse(input.toString()));
         let { resdata, rp } = validate2lvl(handlerType === "message" ? { room, text } : { room }, authInfo);
         resdata.handlerType = handlerType;
 
@@ -381,21 +334,41 @@ WSServer.on("connection", (connection, request) => {
 
         switch (handlerType) {
             case "message":
-                // TODO: Проверять имеет ли пользователь право отправлять сообщения в этот чат
-                // TODO: Подкорректировать message
                 let message = {
-                    room,
+                    isDirect: authInfo.directChats.has(to),
+                    to,
                     authorID: authInfo.nickName,
                     text,
-                    time: new Date(Date.now())
+                    time: new Date()
                 };
-                messages.insertOne(message)
+                entities.findOne({ _id: new ObjectId(to)})
                 .then((result) => {
+                    if (!result) {
+                        throw new Error("Чат не найден.");
+                    }
+                    if (result.isRoom) {
+                        if (!authInfo.rooms.has(to)) {
+                            throw new Error("У вас нет прав для отправки сообщения в эту комнату.");
+                        }
+                        message.isDirect = false;
+                    } else {
+                        if (!authInfo.directChats.has(to)) {
+                            // TODO: Вызвать функцию, которая добавит id-шники обоим собеседникам в свои directChats в БД, в cессию, в connection и отправит уведомления этим двум пользователям
+                        }
+                        message.isDirect = true;
+                    }
+                    return messages.insertOne(message);
+                }).then((result) => {
                     const id = result.ops[0]._id;
                     rp.info = "Сообщение успешно отправлено";
                     rp.isError = false;
                     resdata.reply = { id };
-                    sendToEveryoneInRoom({handlerType: "message", messageId: id, ...message}, room);
+
+                    WSServer.clients.forEach(function (client) {
+                        if (client.authInfo.rooms.has(room)) {
+                            client.send(JSON.stringify({handlerType: "message", msgID: id, ...message}));
+                        }
+                    });
                 }).catch((err) => {
                     console.log(err);
                     rp.info = err.message;
@@ -422,7 +395,7 @@ WSServer.on("connection", (connection, request) => {
                 entities.find({rooms: room}, {projection: { nickName:1, fullName:1 }})
                 .forEach(
                     (doc) => {
-                        const { user, id } = createLiteAuthInfo(doc);
+                        const { user, id } = createLiteAuthInfo(doc, activeUsersCounter);
                         results[id] = user;
                     },
                     function (err) {
@@ -442,12 +415,18 @@ WSServer.on("connection", (connection, request) => {
                 // TODO: Добавить оповещение всех онлайновых, кто в одном чате о присоединении новичка
                 // TODO: Сделать защиту, чтобы имя комнаты не было каким-нибудь ебанутым типа constructor, __proto__ или this
 
-                notifyAboutNewPersonInChat(authInfo, room);
+                // notifyAboutNewUserInRoom(authInfo, roomID);
+                // const { user, id } = createHardAuthInfo(newAuthInfo, activeUsersCounter);
+                // WSServer.clients.forEach(function (client) {
+                //     if (client.authInfo.rooms.has(room)) {
+                //         client.send(JSON.stringify({handlerType: "newUserInRoom", userID: id, user, roomID: }));
+                //     }
+                // });
                 break;
             case "loadFilteredAuthInfoData":
                 // TODO: обязательно проверять а знаком ли этот пользователь со вторым (хотя над этим ещё подумать надо)
                 // Здесь загружается полная инфа о пользователе
-                resdata.reply = createHardAuthInfo();
+                resdata.reply = createHardAuthInfo(authInfo, activeUsersCounter);
                 connection.send(JSON.stringify(resdata));
                 break;
             case "loadListOfDirectChats":
@@ -467,7 +446,7 @@ const cleaner = setInterval(() => {
     WSServer.clients.forEach((connection) => {
         // Если соединение мертво, завершить
         if (!connection.isAlive) {
-            onCloseWSconnection(connection);
+            onCloseWSconnection(connection.authInfo);
             return connection.terminate();
         }
         // обьявить все соединения мертвыми, а тех кто откликнется на ping, сделать живыми

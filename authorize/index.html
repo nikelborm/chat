@@ -1,1 +1,74 @@
-<!DOCTYPE html><html lang="ru"><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Вход в чат</title><meta name="yandex-verification" content="b45cadaf44b78516" /><link rel="stylesheet" href="css/style.css"></head><body><link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'><div id="container"><div id="frame"><div id="nav"><ul><li id="signin" class="active"><a>Sign in</a></li><li id="signup" class="inactive"><a>Sign up </a></li></ul></div><div><form id="form-signin"> <label for="nickNameOrEmail">Почта или никнейм</label> <input class="form-styling" type="text" id="nickNameOrEmail" placeholder="" /> <label for="passwordLogin">Пароль</label> <input class="form-styling" type="password" id="passwordLogin" placeholder="" /> <input type="checkbox" id="checkbox" /> <label for="checkbox"><span class="ui"></span>Запомнить меня</label><div id="btn-animate" class="btn-wrapper"> <input type="submit" id="btn-signin" value="Войти"/></div></form><form id="form-signup"> <label for="fullName">Полное имя</label> <input class="form-styling" type="text" id="fullName" placeholder="" /> <label for="nickName">Никнейм</label> <input class="form-styling" type="text" id="nickName" placeholder="" /> <label for="email">Почта</label> <input class="form-styling" type="email" id="email" placeholder="" /> <label for="passwordRegister">Пароль</label> <input class="form-styling" type="password" id="passwordRegister" placeholder="" /> <label for="confirmPassword">Повторите пароль</label> <input class="form-styling" type="password" id="confirmPassword" placeholder="" /><div class="btn-wrapper"> <input type="submit" id="btn-signup" value="Создать аккаунт"/></div></form><div id="success"><div id="successtext"><p> Благодарим за регистрацию! Перейдите по ссылке из письма, чтобы завершить создание аккаунта.</p></div></div></div><div id="forgot"> <a href="#">Забыли пароль?</a></div><div><div id="cover-photo"></div><div id="profile-photo"></div><h1 id="welcome"></h1></div></div></div> <script src="https://unpkg.com/popper.js@1"></script> <script src="https://unpkg.com/tippy.js@5"></script> <script src="js/index.min.js"></script> </body></html>
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Вход в чат</title>
+    <meta name="yandex-verification" content="b45cadaf44b78516" />
+    <link rel="stylesheet" href="css/style.css">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
+</head>
+
+<body>
+    <div id="container">
+        <div id="frame">
+            <div id="nav">
+                <ul>
+                    <li id="signin" class="active"><a>Sign in</a></li>
+                    <li id="signup" class="inactive"><a>Sign up </a></li>
+                </ul>
+            </div>
+            <div>
+                <form id="form-signin">
+                    <label for="nickNameOrEmail">Почта или никнейм</label>
+                    <input class="form-styling" type="text" id="nickNameOrEmail" placeholder="" autocomplete="username"/>
+                    <label for="passwordLogin">Пароль</label>
+                    <input class="form-styling" type="password" id="passwordLogin" placeholder="" autocomplete="current-password"/>
+                    <input type="checkbox" id="checkbox" />
+                    <label for="checkbox"><span class="ui"></span>Запомнить меня</label>
+                    <div id="btn-animate" class="btn-wrapper">
+                        <input type="submit" id="btn-signin" value="Войти" />
+                    </div>
+                </form>
+                <form id="form-signup">
+                    <label for="fullName">Полное имя</label>
+                    <input class="form-styling" type="text" id="fullName" placeholder="" autocomplete="name"/>
+                    <label for="nickName">Никнейм</label>
+                    <input class="form-styling" type="text" id="nickName" placeholder="" autocomplete="username"/>
+                    <label for="email">Почта</label>
+                    <input class="form-styling" type="email" id="email" placeholder="" autocomplete="email"/>
+                    <label for="passwordRegister">Пароль</label>
+                    <input class="form-styling" type="password" id="passwordRegister" placeholder="" autocomplete="new-password"/>
+                    <label for="confirmPassword">Повторите пароль</label>
+                    <input class="form-styling" type="password" id="confirmPassword" placeholder="" autocomplete="new-password"/>
+                    <div class="btn-wrapper">
+                        <input type="submit" id="btn-signup" value="Создать аккаунт" />
+                    </div>
+                </form>
+                <div id="success">
+                    <div id="successtext">
+                        <p>
+                            Благодарим за регистрацию! Перейдите по ссылке из письма, чтобы завершить создание аккаунта.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div id="forgot">
+                <a href="#">
+                    Забыли пароль?
+                </a>
+            </div>
+            <div>
+                <div id="cover-photo"></div>
+                <div id="profile-photo"></div>
+                <h1 id="welcome"></h1>
+            </div>
+        </div>
+    </div>
+    <script src="https://unpkg.com/popper.js@1"></script>
+    <script src="https://unpkg.com/tippy.js@5"></script>
+    <script src="js/index.min.js"></script>
+</body>
+
+</html>

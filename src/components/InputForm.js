@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { PureComponent } from "react";
 import Tippy from "@tippy.js/react";
 import createEmojiToolTipBody from "../tools/createEmojiToolTipBody";
@@ -19,13 +20,14 @@ class InputForm extends PureComponent {
             this.instanceRef.current.hide();
             const data = {
                 handlerType: "message",
-                room: "global",
+                to: this.props.activeChat,
                 text: this.inputArea.current.value
             };
             this.inputArea.current.value = "";
             window.socket.send(JSON.stringify(data));
         } else {
             // TODO: Добавить Tippy с выводом, что соединение потеряно
+            console.log("Сокет недоступен");
         }
     };
     chooseEmoji = (emoji) => {

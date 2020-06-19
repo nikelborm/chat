@@ -5,11 +5,7 @@ function parseMessageBody(text) {
     let results = [];
     for (const match of text.matchAll(/[#@]([\w\dА-Яа-яЁё]{1,50})/g)) {
         last !== match.index && results.push(text.slice(last, match.index));
-        if (match[0][0] === "#") {
-            results.push(<a href="#" className="hashtag">{match[0]}</a>);
-        } else {
-            results.push(<span className="blue-label">{match[0]}</span>);
-        }
+        results.push(match[0][0] === "#" ? <a href="#" className="hashtag">{match[0]}</a> : <span className="blue-label">{match[0]}</span>);
         last = match.index + match[0].length;
     }
     results.push(text.slice(last));

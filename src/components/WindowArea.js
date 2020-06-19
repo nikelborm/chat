@@ -8,7 +8,7 @@ import ChatsList from "./ChatsList";
 import RightTabs from "../layout/RightTabs";
 import convertMessageTime from '../tools/convertMessageTime';
 import parseMessageBody from '../tools/parseMessageBody';
-// import getCookie from "../tools/getCookie";
+import getCookie from "../tools/getCookie";
 import { Controllers } from './controllers';
 // import loader from "../tools/loader";
 
@@ -21,8 +21,7 @@ class WindowArea extends Component {
     constructor(props) {
         super(props);
         this.cometCreated = false;
-        // TODO: Починить поведение getCookie в этом случае
-        this.myID = /* getCookie("myID") || */"5e81046b8aaba01b18c3e08c";
+        this.myID = getCookie("_id");
         this.controllers = {
             onMuteChange: this.onMuteChange,
             onExpandChange: this.onExpandChange,
@@ -31,8 +30,6 @@ class WindowArea extends Component {
         }
     }
     state = {
-        // myRooms: JSON.parse(getCookie("rooms")) ,
-        // activeChat: JSON.parse(getCookie("rooms")).length === 1 ? getCookie("rooms").slice(2,-2) : "",
         activeChat: "", // По умолчанию пусто, но иначе id чата
         entities: {
             // это данные о сущностях, с которыми приходилось сталкиваться
@@ -223,25 +220,28 @@ class WindowArea extends Component {
                 case "message":
                     // TODO: Подумать о том, а загружен ли этот чат, чтобы в него что-нибудь вставлять?
                     this.setState((prevState) => {
-                        if (!prevState.chatsHistory[data.chatID]) {
-                            prevState.chatsHistory[data.chatID] = {};
-                        }
-                        prevState.chatsHistory[data.chatID][data.msgID] = {
-                            authorID : data.authorID,
-                            messageBody : parseMessageBody(data.text),
-                            correctTime : convertMessageTime(data.time)
+                        prevState.chatsHistory[data.chatID] = {
+                            ...prevState.chatsHistory[data.chatID],
+                            [data.msgID] : {
+                                authorID : data.authorID,
+                                messageBody : parseMessageBody(data.text),
+                                correctTime : convertMessageTime(data.time)
+                            }
                         }
                         return prevState;
                     });
                     break;
                 case "editMessage":
+                    // Не забыть про иммутабельность chatsHistory[data.chatID]
+                    // не бойся использовать её, так как порядок сообщений не собьётся
                     // TODO: При изменении сообщения, полностью создавать новый обьект сообщения, чтобы shouldComponentUpdate в MessagesList сработал
                     break;
-                case "isOnline":
-                case "isOffline":
+                case "online":
+                case "offline":
+                case "idle":
                     if (this.state.entities[data.userID]) {
                         this.setState((prevState) => {
-                            prevState.entities[data.userID].onlineStatus = data.handlerType === "isOnline" ? "online" : "offline";
+                            prevState.entities[data.userID].onlineStatus = data.handlerType;
                             return prevState;
                         });
                     } else {
@@ -251,7 +251,7 @@ class WindowArea extends Component {
                     break;
                 case "newUserInRoom":
                     this.setState((prevState) => {
-                        if (!this.state.entities[data.userID]) {
+                        if (!prevState.entities[data.userID]) {
                             prevState.entities[data.userID] = data.user;
                         }
                         prevState.usersInRooms[data.roomID].add(data.userID);
@@ -315,7 +315,9 @@ class WindowArea extends Component {
                         isDownloading={entities[activeChat]?.isHistoryDownloadingNow}
                         myID={this.myID}
                     />
-                    <InputForm/>
+                    <InputForm
+                        activeChat={activeChat}
+                    />
                 </div>
                 <RightTabs />
             </div>

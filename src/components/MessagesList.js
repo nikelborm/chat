@@ -8,14 +8,14 @@ class MessagesList extends Component {
         this.chatList = createRef();
         this.down = createRef();
     }
-    // shouldComponentUpdate(nextProps) {
-    //     return (
-    //         this.props.activeChat !== nextProps.activeChat ||
-    //         !shallowEqual(this.props.messages, nextProps.messages) ||
-    //         this.props.isLoading !== nextProps.isLoading
-    //     );
-    //     // TODO: Как добавлю редактирование сообщений, прокачать это
-    // }
+    shouldComponentUpdate(nextProps) {
+        return (
+            this.props.activeChat !== nextProps.activeChat ||
+            this.props.history !== nextProps.history ||
+            this.props.isDownloading !== nextProps.isDownloading
+        ); // Поддерживает редактирование сообщений, но если кто то изменит свой никнейм, то эта ситуация обработается со следующим весомым рендером
+        // Потому что перерендеривать весь список сообщений из-за того что entities иммутабельна и она по тысяче причин изменилась - глупо
+    }
     componentDidUpdate() {
         this.chatList.current.scrollTo(0, this.down.current.offsetTop);
     }
@@ -46,7 +46,7 @@ class MessagesList extends Component {
         }
         return (
             <div className="chat-list" ref={this.chatList}>
-                {info ? info : <ul> {msgList} </ul>}
+                {info ? info : <ul> { msgList } </ul>}
                 <span ref={this.down}></span>
             </div>
         );

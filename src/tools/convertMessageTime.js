@@ -1,4 +1,5 @@
 function convertMessageTime(time) {
+    // TODO: Прокачать так, чтобы в зависимости от текущего времени показывался разный набор данных, чем старее, тем подробнее дата
     return new Intl.DateTimeFormat("ru", {
         month: "long",
         day: "numeric",

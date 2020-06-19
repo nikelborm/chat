@@ -1,5 +1,6 @@
 /* eslint-disable no-undef */
 // TODO: Добавить обработку ошибки соединения
+// TODO: Добавить валидацию данных перед отправкой, чтобы не стучать по серверу зря
 function id(id) {
     return document.getElementById(id);
 }
@@ -12,14 +13,17 @@ function changeActiveCard(activeCardId, inActiveCardId) {
 }
 
 function setNewTippy(field, content) {
+    // @ts-ignore
     const instance = id(field)._tippy;
     if (!instance) {
+        // @ts-ignore
         tippy(id(field), { content });
     } else {
         instance.setContent(content);
         instance.show();
     }
 }
+// @ts-ignore
 tippy.setDefaultProps({
     ignoreAttributes: true,
     placement: "bottom",
@@ -27,6 +31,7 @@ tippy.setDefaultProps({
     trigger: "manual",
     theme: "error"
 });
+// @ts-ignore
 tippy([id("nickName"), id("email")], { interactive: true });
 
 id("signin").onclick = function () {

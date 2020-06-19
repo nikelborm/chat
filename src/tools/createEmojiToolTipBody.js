@@ -1,5 +1,6 @@
 import React from "react";
 
+// TODO: Добавить больше эмодзи
 const reactions = [
     {emoji: "👍", label: "Thumbs up"},
     {emoji: "👎", label: "Thumbs down"},
