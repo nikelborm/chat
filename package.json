@@ -20,7 +20,7 @@
   "scripts": {
     "build": "react-scripts build",
     "start_production_server": "node startprod.js --trace-deprecation",
-    "start_development_server": "set PORT=3001 && react-scripts start",
+    "start": "react-scripts start",
     "build_with_profiling": "react-scripts build \"--profile\""
   },
   "eslintConfig": {
@@ -49,6 +49,5 @@
     "react-scripts": "^3.4.1",
     "react-strap": "0.0.1"
   },
-  "homepage": "chat/",
   "proxy": "http://localhost:3000/"
 }
