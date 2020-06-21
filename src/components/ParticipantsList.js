@@ -1,10 +1,10 @@
 import React, { Component } from "react";
 import Participant from "./Participant";
-import symmetricDifference from "../tools/symmetricDifference";
+import { hasSymmetricDifference } from "../tools/symmetricDifference";
 
 class ParticipantsList extends Component {
     shouldComponentUpdate(nextProps) {
-        return nextProps.isExpanded && nextProps.isDownloaded && !!symmetricDifference(nextProps.users, this.props.users).size;
+        return nextProps.isExpanded && nextProps.isDownloaded && hasSymmetricDifference(nextProps.users, this.props.users);
     }
     render() {
         const { users, entities } = this.props;

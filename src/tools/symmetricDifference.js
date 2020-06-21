@@ -1,4 +1,4 @@
-function symmetricDifference(setA, setB) {
+export function symmetricDifference(setA, setB) {
     let _difference = new Set(setA)
     for (let elem of setB) {
         if (_difference.has(elem)) {
@@ -9,4 +9,16 @@ function symmetricDifference(setA, setB) {
     }
     return _difference
 }
-export default symmetricDifference;
+export function hasSymmetricDifference(setA, setB) {
+    if (setA.size !== setB.size) return true;
+
+    let _difference = new Set(setA)
+    for (let elem of setB) {
+        if (_difference.has(elem)) {
+            _difference.delete(elem)
+        } else {
+            return true;
+        }
+    }
+    return !!_difference.size;
+}
