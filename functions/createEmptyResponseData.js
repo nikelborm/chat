@@ -1,4 +1,5 @@
 function createEmptyResponseData() {
+    // * Создаёт базовый объект ответа на запрос
     const resdata = {
         handlerType: "logs",
         report: {

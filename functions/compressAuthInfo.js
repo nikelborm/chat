@@ -1,4 +1,5 @@
 function createLiteAuthInfo(authInfo, counter) {
+    // * Облегчает authInfo до самого необходимого
     const id = authInfo._id.toString();
     return {
         user: {
@@ -10,6 +11,7 @@ function createLiteAuthInfo(authInfo, counter) {
     };
 }
 function createHardAuthInfo(authInfo, counter) {
+    // * Немного расширяет lite версию
     const { user: lite, id } = createLiteAuthInfo(authInfo, counter);
     return {
         user: {

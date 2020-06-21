@@ -54,21 +54,19 @@ function validate1lvl(mode, body) {
 function validate2lvl(body, authInfo) {
     // message, loadChatHistory и тому подобные
     let { resdata, rp } = createEmptyResponseData();
-    const { room, text } = body;
+    const { text } = body;
     let info = "";
 
     if (!isAllStrings(body)) {
         info = "Неправильно составлен запрос";
     } else if (!authInfo) {
         info = "Вы не авторизованы";
-    } else if (!authInfo.rooms.has(room)) {
-        info = "У вас нет доступа к этому чату. Если вы получили к нему доступ с другого устройства, перезайдите в аккаунт.";
     } else if (text === "") {
         info = "Вы отправили пустое сообщение";
     }
 
     rp.info = info;
-    return {resdata, rp: resdata.report};
+    return { resdata, rp: resdata.report };
 }
 exports.validate1lvl = validate1lvl;
 exports.validate2lvl = validate2lvl;

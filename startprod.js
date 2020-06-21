@@ -26,13 +26,31 @@ const sendmail = require("sendmail")({silent:true});
 const querystring = require("querystring");
 
 function sendItToUsersWhoKnowMe({ rooms, directChats }, message) {
-    // Отправляет сообщение всем пользователям, кто сейчас подключён к вебсокету и кому это сообщение играет хоть какое либо значение,
-    // например онлайн статусы идут тем кто в моих прямых чатах или состоит в одной из моих групп, ведь я потенциально могу его увидеть
+    // * Отправляет сообщение всем пользователям, кто сейчас подключён к вебсокету и кому это сообщение играет хоть какое либо значение,
+    // * например онлайн статусы идут тем кто в моих прямых чатах или состоит в одной из моих групп, ведь я потенциально могу его увидеть
     WSServer.clients.forEach(function (client) {
         if ( directChats.has(client.authInfo.id) || hasIntersections(client.authInfo.rooms, rooms)) {
             client.send(JSON.stringify(message));
         }
     });
+}
+function sendItToUsersInRoom(roomID, message) {
+    // * Отправляет сообщение всем участникам комнаты
+    WSServer.clients.forEach(function (client) {
+        if ( client.authInfo.rooms.has(roomID)) {
+            client.send(JSON.stringify(message));
+            return;
+        }
+    });
+}
+function sendItToSpecificUser(userID, message) {
+    // * Отправляет сообщение конкретному пользователю
+    for (const client of WSServer.clients) {
+        if ( client.authInfo.id === userID ) {
+            client.send(JSON.stringify(message));
+            return;
+        }
+    }
 }
 function onCloseWSconnection(myAuthInfo) {
     const userID = myAuthInfo._id;
@@ -289,6 +307,7 @@ app.post("/canIregister", function (request, response) {
 });
 
 // TODO: Добавить восстановление аккаунта по почте
+// TODO: Добавить функцию добавления комнаты или юзера в чёрный список по id-шнику естественно
 const server = http.createServer(app);
 const WSServer = new WebSocket.Server({
     server
@@ -322,12 +341,12 @@ WSServer.on("connection", (connection, request) => {
     connection.on("pong", () => {
         connection.isAlive = true;
     });
-    connection.on("message", (input) => {
+    connection.on("message", async (input) => {
         const { authInfo } = connection;
         // TODO: Проверять не слишком ли большие данные, чтобы долго их не обрабатывать
         const { handlerType, room, text, to } = JSON.parse(input.toString());
-        console.log('JSON.parse(input.toString());: ', JSON.parse(input.toString()));
-        let { resdata, rp } = validate2lvl(handlerType === "message" ? { room, text } : { room }, authInfo);
+        console.log('Пришло в ws: ', JSON.parse(input.toString()));
+        let { resdata, rp } = validate2lvl(handlerType === "message" ? { to, text } : { room }, authInfo);
         resdata.handlerType = handlerType;
 
         if (rp.info) return connection.send(JSON.stringify(resdata));
@@ -335,46 +354,39 @@ WSServer.on("connection", (connection, request) => {
         switch (handlerType) {
             case "message":
                 let message = {
-                    isDirect: authInfo.directChats.has(to),
                     to,
                     authorID: authInfo.nickName,
                     text,
                     time: new Date()
                 };
-                entities.findOne({ _id: new ObjectId(to)})
-                .then((result) => {
+                try {
+                    const result = await entities.findOne({ _id: new ObjectId(to)});
                     if (!result) {
                         throw new Error("Чат не найден.");
                     }
-                    if (result.isRoom) {
-                        if (!authInfo.rooms.has(to)) {
-                            throw new Error("У вас нет прав для отправки сообщения в эту комнату.");
-                        }
-                        message.isDirect = false;
-                    } else {
-                        if (!authInfo.directChats.has(to)) {
-                            // TODO: Вызвать функцию, которая добавит id-шники обоим собеседникам в свои directChats в БД, в cессию, в connection и отправит уведомления этим двум пользователям
-                        }
-                        message.isDirect = true;
+                    message.isDirect = !result.isRoom;
+                    if (result.isRoom && !authInfo.rooms.has(to)) {
+                        throw new Error("У вас нет прав для отправки сообщения в эту комнату.");
                     }
-                    return messages.insertOne(message);
-                }).then((result) => {
-                    const id = result.ops[0]._id;
+                    if (!result.isRoom && !authInfo.directChats.has(to)) {
+                        // TODO: Вызвать функцию, которая добавит id-шники обоим собеседникам в свои directChats в БД, в cессию, в connection и отправит уведомления этим двум пользователям
+                    }
+
+                    const msgID = (await messages.insertOne(message)).ops[0]._id;
                     rp.info = "Сообщение успешно отправлено";
                     rp.isError = false;
-                    resdata.reply = { id };
+                    resdata.reply = { msgID };
 
                     WSServer.clients.forEach(function (client) {
                         if (client.authInfo.rooms.has(room)) {
-                            client.send(JSON.stringify({handlerType: "message", msgID: id, ...message}));
+                            client.send(JSON.stringify({handlerType: "message", msgID, ...message}));
                         }
                     });
-                }).catch((err) => {
+                } catch (err) {
                     console.log(err);
                     rp.info = err.message;
-                }).finally(() => {
-                    connection.send(JSON.stringify(resdata));
-                });
+                }
+                connection.send(JSON.stringify(resdata));
                 break;
             case "loadSpecificChatHistory":
                 messages.find({ room }, { projection: {room: 0} })
