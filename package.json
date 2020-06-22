@@ -21,6 +21,7 @@
     "build": "react-scripts build",
     "start_production_server": "node startprod.js --trace-deprecation",
     "start": "react-scripts start",
+    "start_sup": "set PORT=3001 && react-scripts start",
     "build_with_profiling": "react-scripts build \"--profile\""
   },
   "eslintConfig": {

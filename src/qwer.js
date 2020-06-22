@@ -1,16 +1,6 @@
 /* eslint-disable no-undef */
 // TODO: Добавить обработку ошибки соединения
 // TODO: Добавить валидацию данных перед отправкой, чтобы не стучать по серверу зря
-function id(id) {
-    return document.getElementById(id);
-}
-
-function changeActiveCard(activeCardId, inActiveCardId) {
-    id(activeCardId).classList.add("active");
-    id(activeCardId).classList.remove("inactive");
-    id(inActiveCardId).classList.remove("active");
-    id(inActiveCardId).classList.add("inactive");
-}
 
 function setNewTippy(field, content) {
     // @ts-ignore
