@@ -40,14 +40,14 @@ body {
     box-shadow: 0px 2px 7px rgba(0, 0, 0, 0.1) !important;
 }
 
-#nav {
+.nav {
     width: 100%;
     height: 70px;
     padding-top: 30px;
     transition: all .5s ease;
 }
 
-#nav ul {
+.nav ul {
     margin: 0px auto;
     width: fit-content;
     padding: 0;
@@ -81,7 +81,7 @@ li {
     transition: all .25s ease;
 }
 
-#form-signup, #form-signin {
+form {
     width: 430px;
     font-size: 16px;
     font-weight: 300;
@@ -104,8 +104,7 @@ li {
     width: 270px;
 }
 
-#form-signin input,
-#form-signup input {
+form input{
     color: #fff;
     font-size: 13px;
 }
@@ -134,9 +133,7 @@ label {
     outline: none;
 }
 
-#form-signin input:not([type="submit"]):focus,
-textarea:focus,
-#form-signup input:not([type="submit"]):focus,
+form input:not([type="submit"]):focus,
 textarea:focus {
     background: rgba(255, 255, 255, .3);
     border: none;
@@ -263,7 +260,7 @@ textarea:focus {
 }
 
 .forgot a {
-    color: rgba(255, 255, 255, .3);
+    color: rgba(255, 255, 255, .7);
     font-weight: 400;
     font-size: 13px;
     text-decoration: none;
