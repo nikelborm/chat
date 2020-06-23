@@ -230,6 +230,7 @@ app.get("/finishRegistration", function (request, response) {
     });
 });
 // TODO: Сделать,чтобы сессия привязывалась к ip, что помешает использовать одни и те же сессионные куки на разных устройствах
+// TODO: Поправить всё, что связано с аватаром пользователя, так как обновилось в базе данных
 app.post("/canIregister", function (request, response) {
     const { nickName, password, confirmPassword, fullName, email } = request.body;
     let { resdata, rp } = validate1lvl("register", { nickName, password, confirmPassword, fullName, email });
