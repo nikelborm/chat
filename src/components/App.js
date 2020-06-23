@@ -1,12 +1,11 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import React, { Component, createRef } from 'react';
 import loader from './loader';
-import "../style/css/style.css";
-import unnamed from '../style/css/unnamed.jpg';
+import "../style/style.css";
+import unnamed from '../style/unnamed.jpg';
 import SuccessRegistration from './SuccessRegistration';
 import Welcome from './Welcome';
 import Nav from './Nav';
-console.log('unnamed: ', unnamed);
 
 class App extends Component {
     constructor(props) {
@@ -34,7 +33,6 @@ class App extends Component {
     onSubmitRegisterForm = async (event) => {
         // TODO: Добавить валидацию данных перед отправкой, чтобы не стучать по серверу зря
         event.preventDefault();
-        console.log('onSubmitRegisterForm');
         const body = {
             nickName: this.nickName.current.value,
             password: this.passwordRegister.current.value,
@@ -54,7 +52,6 @@ class App extends Component {
     onSubmitLoginForm = async (event) => {
         // TODO: Добавить валидацию данных перед отправкой, чтобы не стучать по серверу зря
         event.preventDefault();
-        console.log('onSubmitLoginForm');
         const body = {
             nickNameOrEmail: this.nickNameOrEmail.current.value,
             password: this.passwordLogin.current.value
@@ -98,9 +95,9 @@ class App extends Component {
                 />
                 <form id="form-signin" onSubmit={ this.onSubmitLoginForm }>
                     <label htmlFor="nickNameOrEmail">Почта или никнейм</label>
-                    <input className="form-styling" type="text" id="nickNameOrEmail" placeholder="" autoComplete="username" ref={this.nickNameOrEmail}/>
+                    <input className="form-styling" type="text" id="nickNameOrEmail" autoComplete="username" ref={this.nickNameOrEmail}/>
                     <label htmlFor="passwordLogin">Пароль</label>
-                    <input className="form-styling" type="password" id="passwordLogin" placeholder="" autoComplete="current-password" ref={this.passwordLogin}/>
+                    <input className="form-styling" type="password" id="passwordLogin" autoComplete="current-password" ref={this.passwordLogin}/>
                     <input type="checkbox" id="checkbox" />
                     <label htmlFor="checkbox"><span className="ui"></span>Запомнить меня</label>
                     <div id="btn-animate" className="btn-wrapper">
@@ -120,15 +117,15 @@ class App extends Component {
                 />
                 <form id="form-signup" onSubmit={ this.onSubmitRegisterForm }>
                     <label htmlFor="fullName">Полное имя</label>
-                    <input className="form-styling" type="text" id="fullName" placeholder="" autoComplete="name" ref={this.fullName}/>
+                    <input className="form-styling" type="text" id="fullName" autoComplete="name" ref={this.fullName}/>
                     <label htmlFor="nickName">Никнейм</label>
-                    <input className="form-styling" type="text" id="nickName" placeholder="" autoComplete="username" ref={this.nickName}/>
+                    <input className="form-styling" type="text" id="nickName" autoComplete="username" ref={this.nickName}/>
                     <label htmlFor="email">Почта</label>
-                    <input className="form-styling" type="email" id="email" placeholder="" autoComplete="email" ref={this.email}/>
+                    <input className="form-styling" type="email" id="email" autoComplete="email" ref={this.email}/>
                     <label htmlFor="passwordRegister">Пароль</label>
-                    <input className="form-styling" type="password" id="passwordRegister" placeholder="" autoComplete="new-password" ref={this.passwordRegister}/>
+                    <input className="form-styling" type="password" id="passwordRegister" autoComplete="new-password" ref={this.passwordRegister}/>
                     <label htmlFor="confirmPassword">Повторите пароль</label>
-                    <input className="form-styling" type="password" id="confirmPassword" placeholder="" autoComplete="new-password" ref={this.confirmPassword}/>
+                    <input className="form-styling" type="password" id="confirmPassword" autoComplete="new-password" ref={this.confirmPassword}/>
                     <div className="btn-wrapper">
                         <input type="submit" className="btn" value="Создать аккаунт" />
                     </div>
