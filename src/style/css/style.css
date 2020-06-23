@@ -287,9 +287,6 @@ textarea:focus {
     position: relative;
     border-radius: 70px;
     top: -62.5px;
-    background-image: url(unnamed.jpg);
-    background-size: 100% 100%;
-    background-position: 100% 100%;
     margin: auto;
     transition: top 1.5s ease 0.35s, opacity .75s ease .5s;
     border: solid 3px #fff;

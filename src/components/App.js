@@ -2,9 +2,11 @@
 import React, { Component, createRef } from 'react';
 import loader from './loader';
 import "../style/css/style.css";
+import unnamed from '../style/css/unnamed.jpg';
 import SuccessRegistration from './SuccessRegistration';
 import Welcome from './Welcome';
 import Nav from './Nav';
+console.log('unnamed: ', unnamed);
 
 class App extends Component {
     constructor(props) {
@@ -20,12 +22,17 @@ class App extends Component {
     state = {
         mode: "login", // login, register, success registration, welcome
         fullName: "",
-        avatarLink: ""
+        avatarStyle: {
+            backgroundImage: 'url(' + unnamed + ')',
+            backgroundSize: "100% 100%",
+            backgroundPosition: "100% 100%"
+        }
     }
     onSelectLoginMode = () => this.setState({ mode : "login" });
     onSelectRegisterMode = () => this.setState({ mode : "register" });
 
     onSubmitRegisterForm = async (event) => {
+        // TODO: Добавить валидацию данных перед отправкой, чтобы не стучать по серверу зря
         event.preventDefault();
         console.log('onSubmitRegisterForm');
         const body = {
@@ -35,24 +42,44 @@ class App extends Component {
             email: this.email.current.value,
             fullName: this.fullName.current.value
         };
-        const responseData = await loader(body, "/canIregister");
-        if ( responseData.report.isError ) return;
+        // const responseData = await loader(body, "/canIregister");
+        // if ( responseData.report.isError ) return;
 
         // some code
+        this.setState((prevState) => {
+            prevState.mode = "success registration";
+            return prevState;
+        });
     };
     onSubmitLoginForm = async (event) => {
+        // TODO: Добавить валидацию данных перед отправкой, чтобы не стучать по серверу зря
         event.preventDefault();
         console.log('onSubmitLoginForm');
         const body = {
             nickNameOrEmail: this.nickNameOrEmail.current.value,
             password: this.passwordLogin.current.value
         };
-        const responseData = await loader(body, "/canIlogin");
-        if ( responseData.report.isError ) return;
+        // const responseData = await loader(body, "/canIlogin");
+        // if ( responseData.report.isError ) return;
 
-        const { fullName, avatarLink } = responseData.reply;
-        console.log('fullName, avatarLink: ', fullName, avatarLink);
+        // const { fullName, avatarLink, backgroundSize, backgroundPosition} = responseData.reply;
+        // console.log('fullName, avatarLink: ', fullName, avatarLink);
         // some code
+        const fullName = "Евангелина Рима";
+        // const avatarLink = "https://78.media.tumblr.com/567fd31cd14ba2b05635cdd70289f820/tumblr_ouqvv5VH0n1qa9ce6o1_500.png";
+        // const backgroundSize = "130%";
+        // const backgroundPosition = "50% 10%";
+        this.setState((prevState) => {
+            prevState.mode = "welcome";
+            prevState.fullName = fullName;
+            // avatarLink && (prevState.avatarStyle.backgroundImage = 'url(' + avatarLink + ')');
+            // backgroundSize && (prevState.avatarStyle.backgroundSize = backgroundSize);
+            // backgroundPosition && (prevState.avatarStyle.backgroundPosition = backgroundPosition);
+            return prevState;
+        });
+        // setTimeout(function () {
+        //     document.location.href = document.location.origin + "/chat";
+        // }, 3000);
     }
     render() {
         const { mode } = this.state;
@@ -109,7 +136,7 @@ class App extends Component {
             </>}
             { mode  === "success registration" && <SuccessRegistration/> }
             { mode  === "welcome" && <Welcome
-                avatarLink={this.state.avatarLink}
+                avatarStyle={this.state.avatarStyle}
                 fullName={this.state.fullName}
             /> }
         </div>
