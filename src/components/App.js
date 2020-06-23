@@ -1,8 +1,8 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import React, { Component, createRef } from 'react';
-import loader from './loader';
-import "../style/style.css";
-import unnamed from '../style/unnamed.jpg';
+// import loader from './loader';
+import "../style/level1/style.css";
+import unnamed from '../style/level1/unnamed.jpg';
 import SuccessRegistration from './SuccessRegistration';
 import Welcome from './Welcome';
 import Nav from './Nav';
@@ -33,13 +33,13 @@ class App extends Component {
     onSubmitRegisterForm = async (event) => {
         // TODO: Добавить валидацию данных перед отправкой, чтобы не стучать по серверу зря
         event.preventDefault();
-        const body = {
-            nickName: this.nickName.current.value,
-            password: this.passwordRegister.current.value,
-            confirmPassword: this.confirmPassword.current.value,
-            email: this.email.current.value,
-            fullName: this.fullName.current.value
-        };
+        // const body = {
+        //     nickName: this.nickName.current.value,
+        //     password: this.passwordRegister.current.value,
+        //     confirmPassword: this.confirmPassword.current.value,
+        //     email: this.email.current.value,
+        //     fullName: this.fullName.current.value
+        // };
         // const responseData = await loader(body, "/canIregister");
         // if ( responseData.report.isError ) return;
 
@@ -52,10 +52,10 @@ class App extends Component {
     onSubmitLoginForm = async (event) => {
         // TODO: Добавить валидацию данных перед отправкой, чтобы не стучать по серверу зря
         event.preventDefault();
-        const body = {
-            nickNameOrEmail: this.nickNameOrEmail.current.value,
-            password: this.passwordLogin.current.value
-        };
+        // const body = {
+        //     nickNameOrEmail: this.nickNameOrEmail.current.value,
+        //     password: this.passwordLogin.current.value
+        // };
         // const responseData = await loader(body, "/canIlogin");
         // if ( responseData.report.isError ) return;
 
