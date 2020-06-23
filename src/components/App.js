@@ -13,7 +13,7 @@ class App extends Component {
         this.confirmPassword = createRef();
     }
     state = {
-        mode: "login" // login, register, success registration, welcome
+        mode: "register" // login, register, success registration, welcome
     }
     onSelectSignInMode = () => this.setState({ mode : "login" });
     onSelectSignUpMode = () => this.setState({ mode : "register" });
@@ -58,44 +58,46 @@ class App extends Component {
                     mode === "register" ? "frame-long" : ""
                 }
             >
-                { (mode === "login" || mode === "register") && <div id="nav">
-                    <ul>
-                        <li
-                            id="signin"
-                            className={ mode === "login" ? "active" : "inactive" }
-                            onClick={this.onSelectSignInMode}
-                        >
-                            <a>Sign in</a>
-                        </li>
-                        <li
-                            id="signup"
-                            className={ mode === "register" ? "active" : "inactive" }
-                            onClick={this.onSelectSignUpMode}
-                        >
-                            <a>Sign up </a>
-                        </li>
-                    </ul>
-                </div> }
-                { (mode === "login" || mode === "register") && <div>
-                    {mode  === "login" && <>
-                        <form id="form-signin" onSubmit={ this.onSubmitLoginForm }>
-                            <label htmlFor="nickNameOrEmail">Почта или никнейм</label>
-                            <input className="form-styling" type="text" id="nickNameOrEmail" placeholder="" autoComplete="username" ref={this.nickNameOrEmail}/>
-                            <label htmlFor="passwordLogin">Пароль</label>
-                            <input className="form-styling" type="password" id="passwordLogin" placeholder="" autoComplete="current-password" ref={this.passwordLogin}/>
-                            <input type="checkbox" id="checkbox" />
-                            <label htmlFor="checkbox"><span className="ui"></span>Запомнить меня</label>
-                            <div id="btn-animate" className="btn-wrapper">
-                                <input type="submit" id="btn-signin" value="Войти" />
-                            </div>
-                        </form>
-                        <div id="forgot">
-                            <a href="#">
-                                Забыли пароль?
-                            </a>
+                {mode  === "login" && <>
+                    <div id="nav">
+                        <ul>
+                            <li id="signin" className="active" >
+                                <a>Sign in</a>
+                            </li>
+                            <li id="signup" className="inactive" onClick={this.onSelectSignUpMode}>
+                                <a>Sign up </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <form id="form-signin" onSubmit={ this.onSubmitLoginForm }>
+                        <label htmlFor="nickNameOrEmail">Почта или никнейм</label>
+                        <input className="form-styling" type="text" id="nickNameOrEmail" placeholder="" autoComplete="username" ref={this.nickNameOrEmail}/>
+                        <label htmlFor="passwordLogin">Пароль</label>
+                        <input className="form-styling" type="password" id="passwordLogin" placeholder="" autoComplete="current-password" ref={this.passwordLogin}/>
+                        <input type="checkbox" id="checkbox" />
+                        <label htmlFor="checkbox"><span className="ui"></span>Запомнить меня</label>
+                        <div id="btn-animate" className="btn-wrapper">
+                            <input type="submit" className="btn" value="Войти" />
                         </div>
-                    </>}
-                    {mode  === "register" && <form id="form-signup" onSubmit={ this.onSubmitRegisterForm }>
+                    </form>
+                    <div className="forgot">
+                        <a href="#">
+                            Забыли пароль?
+                        </a>
+                    </div>
+                </>}
+                {mode  === "register" && <>
+                    <div id="nav">
+                        <ul>
+                            <li id="signin" className="inactive" onClick={this.onSelectSignInMode} >
+                                <a>Sign in</a>
+                            </li>
+                            <li id="signup" className="active">
+                                <a>Sign up </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <form id="form-signup" onSubmit={ this.onSubmitRegisterForm }>
                         <label htmlFor="fullName">Полное имя</label>
                         <input className="form-styling" type="text" id="fullName" placeholder="" autoComplete="name" ref={this.fullName}/>
                         <label htmlFor="nickName">Никнейм</label>
@@ -107,10 +109,10 @@ class App extends Component {
                         <label htmlFor="confirmPassword">Повторите пароль</label>
                         <input className="form-styling" type="password" id="confirmPassword" placeholder="" autoComplete="new-password" ref={this.confirmPassword}/>
                         <div className="btn-wrapper">
-                            <input type="submit" id="btn-signup" value="Создать аккаунт" />
+                            <input type="submit" className="btn" value="Создать аккаунт" />
                         </div>
-                    </form>}
-                </div> }
+                    </form>
+                </>}
                 { mode  === "success registration" && <div id="success">
                     <div id="successtext">
                         <p>
@@ -118,11 +120,12 @@ class App extends Component {
                         </p>
                     </div>
                 </div> }
-                { mode  === "welcome" && <div>
-                    <div id="cover-photo"></div>
-                    <div id="profile-photo"></div>
-                    <h1 id="welcome"></h1>
-                </div> }
+                { mode  === "welcome" && <div className="welcome-container">
+                        <div id="cover-photo"></div>
+                        <div id="profile-photo"></div>
+                        <h1 id="welcome">Welcome,<br/>{"Евангелина Рима"}</h1>
+                    </div>
+                }
             </div>
         </div>
         );
