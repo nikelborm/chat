@@ -18,6 +18,7 @@
     "ws": "^7.3.0"
   },
   "scripts": {
+    "analyze": "source-map-explorer 'build/static/js/*.js'",
     "build": "react-scripts build",
     "start_production_server": "node startprod.js --trace-deprecation",
     "start_development_server": "set PORT=3001 && react-scripts start",
@@ -50,5 +51,8 @@
     "react-strap": "0.0.1"
   },
   "homepage": "chat/",
-  "proxy": "http://localhost:3000/"
+  "proxy": "http://localhost:3000/",
+  "optionalDependencies": {
+    "source-map-explorer": "^2.4.2"
+  }
 }

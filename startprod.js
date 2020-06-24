@@ -192,7 +192,7 @@ app.post("/canIlogin", function (request, response) {
 
         const { fullName, avatarLink } = request.session.authInfo = result;
         resdata.reply = { fullName, avatarLink };
-        fillCookies(response, result, "nickName", "fullName", "statusText", "avatarLink", "_id");
+        fillCookies(response, result, "nickName", "fullName", "statusText", "_id");
         rp.isError = false;
         rp.info = "Успешная авторизация";
     }).catch((err) => {
@@ -214,7 +214,7 @@ app.get("/finishRegistration", function (request, response) {
     .then((result) => {
         if (!result) return;
         request.session.authInfo = result;
-        fillCookies(response, result, "nickName", "fullName", "statusText", "avatarLink", "_id");
+        fillCookies(response, result, "nickName", "fullName", "statusText", "_id");
         page = "/chat";
         return entities.updateOne( { _id }, {
             // $addToSet: { rooms: тут можно добавить что-нибудь к любому массиву },
