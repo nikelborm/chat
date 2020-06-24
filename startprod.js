@@ -247,7 +247,11 @@ app.post("/canIregister", function (request, response) {
             fullName,
             regDate: new Date(),
             statusText: "В сети", // TODO: Подумать над этим
-            avatarLink: "https://99px.ru/sstorage/1/2020/01/image_12201200001487843711.gif", // TODO: Добавить возможность выбора аватара
+            avatarStyle: { // TODO: Добавить возможность выбора аватара
+                avatarLink: "",
+                backgroundSize: "",
+                backgroundPosition: ""
+            },
             rooms: [],
             directChats: [],
             muted: [],
