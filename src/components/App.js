@@ -1,13 +1,13 @@
-import React, { Fragment } from "react";
+import React from "react";
 import WindowArea from "./WindowArea";
 import WindowTitle from "../layout/WindowTitle";
 
 function App() {
     return (
-        <Fragment>
+        <div className="window-wrapper">
             <WindowTitle />
             <WindowArea />
-        </Fragment>
+        </div>
     );
 }
 export default App;
