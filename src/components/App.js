@@ -6,17 +6,23 @@ import unnamed from '../style/level1/unnamed.jpg';
 import SuccessRegistration from './SuccessRegistration';
 import Welcome from './Welcome';
 import Nav from './Nav';
+import LoginForm from './LoginForm';
+import RegisterForm from './RegisterForm';
 
 class App extends Component {
     constructor(props) {
         super(props);
-        this.nickNameOrEmail = createRef();
-        this.passwordLogin = createRef();
-        this.fullName = createRef();
-        this.nickName = createRef();
-        this.email = createRef();
-        this.passwordRegister = createRef();
-        this.confirmPassword = createRef();
+        this.loginRefs = {
+            nickNameOrEmail: createRef(),
+            password: createRef()
+        };
+        this.registerRefs = {
+            fullName: createRef(),
+            nickName: createRef(),
+            email: createRef(),
+            password: createRef(),
+            confirmPassword: createRef()
+        };
     }
     state = {
         mode: "login", // login, register, success registration, welcome
@@ -30,15 +36,19 @@ class App extends Component {
     onSelectLoginMode = () => this.setState({ mode : "login" });
     onSelectRegisterMode = () => this.setState({ mode : "register" });
 
+    getValue = (refGroup) => (prop) => this[refGroup][prop].current.value;
+    getRegValue = this.getValue("registerRefs");
+    getLogValue = this.getValue("loginRefs");
+
     onSubmitRegisterForm = async (event) => {
         // TODO: Добавить валидацию данных перед отправкой, чтобы не стучать по серверу зря
         event.preventDefault();
         // const body = {
-        //     nickName: this.nickName.current.value,
-        //     password: this.passwordRegister.current.value,
-        //     confirmPassword: this.confirmPassword.current.value,
-        //     email: this.email.current.value,
-        //     fullName: this.fullName.current.value
+        //     nickName: this.getRegValue("nickName"),
+        //     password: this.getRegValue("password"),
+        //     confirmPassword: this.getRegValue("confirmPassword"),
+        //     email: this.getRegValue("email"),
+        //     fullName: this.getRegValue("fullName")
         // };
         // const responseData = await loader(body, "/canIregister");
         // if ( responseData.report.isError ) return;
@@ -53,8 +63,8 @@ class App extends Component {
         // TODO: Добавить валидацию данных перед отправкой, чтобы не стучать по серверу зря
         event.preventDefault();
         // const body = {
-        //     nickNameOrEmail: this.nickNameOrEmail.current.value,
-        //     password: this.passwordLogin.current.value
+        //     nickNameOrEmail: this.getLogValue("nickNameOrEmail"),
+        //     password: this.getLogValue("password")
         // };
         // const responseData = await loader(body, "/canIlogin");
         // if ( responseData.report.isError ) return;
@@ -74,6 +84,7 @@ class App extends Component {
             // backgroundPosition && (prevState.avatarStyle.backgroundPosition = backgroundPosition);
             return prevState;
         });
+        // import("./предзагрузка компонента чата импортирующего новые стили").then((...args) => console.log(args));
         // setTimeout(function () {
         //     document.location.href = document.location.origin + "/chat";
         // }, 3000);
@@ -93,17 +104,10 @@ class App extends Component {
                     mode={ mode }
                     onChangeCard={ this.onSelectRegisterMode }
                 />
-                <form id="form-signin" onSubmit={ this.onSubmitLoginForm }>
-                    <label htmlFor="nickNameOrEmail">Почта или никнейм</label>
-                    <input className="form-styling" type="text" id="nickNameOrEmail" autoComplete="username" ref={this.nickNameOrEmail}/>
-                    <label htmlFor="passwordLogin">Пароль</label>
-                    <input className="form-styling" type="password" id="passwordLogin" autoComplete="current-password" ref={this.passwordLogin}/>
-                    <input type="checkbox" id="checkbox" />
-                    <label htmlFor="checkbox"><span className="ui"></span>Запомнить меня</label>
-                    <div id="btn-animate" className="btn-wrapper">
-                        <input type="submit" className="btn" value="Войти" />
-                    </div>
-                </form>
+                <LoginForm
+                    onSubmit={ this.onSubmitLoginForm }
+                    refs={this.loginRefs}
+                />
                 <div className="forgot">
                     <a href="#">
                         Забыли пароль?
@@ -115,21 +119,10 @@ class App extends Component {
                     mode={ mode }
                     onChangeCard={ this.onSelectLoginMode }
                 />
-                <form id="form-signup" onSubmit={ this.onSubmitRegisterForm }>
-                    <label htmlFor="fullName">Полное имя</label>
-                    <input className="form-styling" type="text" id="fullName" autoComplete="name" ref={this.fullName}/>
-                    <label htmlFor="nickName">Никнейм</label>
-                    <input className="form-styling" type="text" id="nickName" autoComplete="username" ref={this.nickName}/>
-                    <label htmlFor="email">Почта</label>
-                    <input className="form-styling" type="email" id="email" autoComplete="email" ref={this.email}/>
-                    <label htmlFor="passwordRegister">Пароль</label>
-                    <input className="form-styling" type="password" id="passwordRegister" autoComplete="new-password" ref={this.passwordRegister}/>
-                    <label htmlFor="confirmPassword">Повторите пароль</label>
-                    <input className="form-styling" type="password" id="confirmPassword" autoComplete="new-password" ref={this.confirmPassword}/>
-                    <div className="btn-wrapper">
-                        <input type="submit" className="btn" value="Создать аккаунт" />
-                    </div>
-                </form>
+                <RegisterForm
+                    onSubmit={ this.onSubmitRegisterForm }
+                    refs={this.registerRefs}
+                />
             </>}
             { mode  === "success registration" && <SuccessRegistration/> }
             { mode  === "welcome" && <Welcome
