@@ -72,13 +72,6 @@ function onAccessWSconnection(myAuthInfo) {
     }
 }
 
-function redirectIfNecessary(target, request, response) {
-    if (!!request.session.authInfo !== (target === "/")) {
-        response.sendFile(path.join(__dirname, target === "/" ? "authorize/index.min.html" : "build/index.html"));
-    } else {
-        response.redirect(target === "/" ? "/chat" : "/");
-    }
-}
 function shutdown() {
     let haveErrors = false;
     console.log("Exiting...\n\nClosing WebSocket server...");
@@ -157,11 +150,10 @@ app.use(favicon(__dirname + "/build/favicon.ico"));
 //   /loadChatHistory
 //   /loadListOfUsersInChat
 
-app.get("/", redirectIfNecessary.bind(undefined, "/"));
-app.use("/", express.static(path.join(__dirname, "authorize")));
-
-app.get("/chat", redirectIfNecessary.bind(undefined, "/chat"));
-app.use("/chat", express.static(path.join(__dirname, "build")));
+app.use(express.static(path.join(__dirname, "build")));
+app.get("/*", (request, response) => {
+    response.sendFile(path.join(__dirname, "build", "index.html"));
+});
 
 app.get("/deleteAccount", function(request, response) {
     // TODO: По такому же принципу построить удаление комнат

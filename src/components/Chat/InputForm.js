@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { PureComponent } from "react";
 import Tippy from "@tippy.js/react";
-import createEmojiToolTipBody from "../tools/createEmojiToolTipBody";
+import createEmojiToolTipBody from "./tools/createEmojiToolTipBody";
 
 import "tippy.js/dist/tippy.css";
 import "tippy.js/themes/light.css";

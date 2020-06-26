@@ -1,6 +1,6 @@
 /* eslint-disable no-useless-concat */
 import React, { Component } from "react";
-import getCookie from "../tools/getCookie";
+import getCookie from "../../tools/getCookie";
 import emptyAvatar from "../styles/white.jpg";
 
 class MyAccountInfo extends Component {

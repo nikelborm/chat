@@ -12,6 +12,7 @@
     "express-session": "^1.17.1",
     "mongodb": "^3.5.9",
     "querystring": "^0.2.0",
+    "react-router-dom": "^5.2.0",
     "redis": "^2.8.0",
     "sendmail": "^1.6.1",
     "sha256": "^0.2.0",
@@ -50,7 +51,7 @@
     "react-scripts": "^3.4.1",
     "react-strap": "0.0.1"
   },
-  "homepage": "chat/",
+  "homepage": ".",
   "proxy": "http://localhost:3000/",
   "optionalDependencies": {
     "source-map-explorer": "^2.4.2"
