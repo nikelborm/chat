@@ -1,8 +1,8 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import React, { Component, createRef } from 'react';
 // import loader from './loader';
-import "../../style/level1/style.css";
-import unnamed from '../../style/level1/unnamed.jpg';
+import "./styles/index.css";
+import unnamed from './styles/unnamed.jpg';
 import SuccessRegistration from './components/SuccessRegistration';
 import Welcome from './components/Welcome';
 import Nav from './components/Nav';
