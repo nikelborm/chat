@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import Participant from "./Participant";
-import { hasSymmetricDifference } from "../../tools/symmetricDifference";
+import { hasSymmetricDifference } from "../../../tools/symmetricDifference";
 
 class ParticipantsList extends Component {
     shouldComponentUpdate(nextProps) {
