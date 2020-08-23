@@ -1,7 +1,7 @@
 /* eslint-disable no-useless-concat */
 import React, { Component } from "react";
 import getCookie from "../../tools/getCookie";
-import emptyAvatar from "../styles/white.jpg";
+import emptyAvatar from "../../style/level1/white.jpg";
 
 class MyAccountInfo extends Component {
     shouldComponentUpdate() {
