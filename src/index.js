@@ -1,12 +1,13 @@
 import React from "react";
 import { render } from "react-dom";
-import App from "./components/App.js";
 import { BrowserRouter } from "react-router-dom";
+import Chat from "./pages/Chat";
+import Authorize from "./pages/Authorize";
 
 render(
     <React.StrictMode>
         <BrowserRouter>
-            <App />
+            <Chat />
         </BrowserRouter>
     </React.StrictMode>,
     document.getElementById("root")
