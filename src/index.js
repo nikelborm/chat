@@ -8,6 +8,14 @@ render(
     <React.StrictMode>
         <BrowserRouter>
             <Chat />
+            {/* <Switch>
+                <AuthorizeRoute exact path="/auth"/>
+                <ChatRoute exact path="/chat"/>
+                <LogoutRoute exact path="/logout"/>
+                <Route path="*">
+                    <Redirect to="/"/>
+                </Route>
+            </Switch> */}
         </BrowserRouter>
     </React.StrictMode>,
     document.getElementById("root")

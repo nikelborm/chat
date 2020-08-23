@@ -5,7 +5,7 @@ import MessagesList from "./MessagesList";
 import MyAccountInfo from "./MyAccountInfo";
 import ChatsList from "./ChatsList";
 
-import RightTabs from "../layout/RightTabs";
+import RightTabs from "./layout/RightTabs";
 import convertMessageTime from '../tools/convertMessageTime';
 import parseMessageBody from '../tools/parseMessageBody';
 import getCookie from "../../../tools/getCookie";

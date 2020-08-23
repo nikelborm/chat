@@ -1,6 +1,6 @@
 import React from "react";
 import WindowArea from "./components/WindowArea";
-import WindowTitle from "./layout/WindowTitle";
+import WindowTitle from "./components/layout/WindowTitle";
 import "./styles/index.css";
 
 function Chat() {
