@@ -4,12 +4,9 @@ html, body, #root, #app {
 	border: 0;
 	width: 100%;
 	height: 100%;
-	font-size: 100%;
-	font: inherit;
+	font-family: 'Open Sans', Arial, sans-serif;
 	line-height: 1;
 }
-
-
 #app {
     background: linear-gradient(#000a, #000a), url(1.jpg) no-repeat center center fixed;
     background-size: cover;
@@ -17,25 +14,8 @@ html, body, #root, #app {
 	place-items: center center;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 * {
     box-sizing: border-box;
-    font-family: 'Open Sans', Arial, sans-serif;
 }
 #frame {
     height: 465px;
