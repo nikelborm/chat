@@ -1,22 +1,20 @@
-html,
-body * {
-    box-sizing: border-box;
-    font-family: 'Open Sans', sans-serif;
+html, body, #root, #app {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	width: 100%;
+	height: 100%;
+	font-size: 100%;
+	font: inherit;
+	line-height: 1;
 }
 
-html,
-body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-}
 
-body {
-    display: grid;
-    place-items: center center;
+#app {
     background: linear-gradient(#000a, #000a), url(1.jpg) no-repeat center center fixed;
     background-size: cover;
+    display: grid;
+	place-items: center center;
 }
 
 
@@ -35,6 +33,10 @@ body {
 
 
 
+* {
+    box-sizing: border-box;
+    font-family: 'Open Sans', Arial, sans-serif;
+}
 #frame {
     height: 465px;
     width: 430px;

@@ -5,18 +5,20 @@ import Chat from "./pages/Chat";
 // import Authorize from "./pages/Authorize";
 
 render(
-    <React.StrictMode>
-        <BrowserRouter>
-            <Chat />
-            {/* <Switch>
-                <AuthorizeRoute exact path="/auth"/>
-                <ChatRoute exact path="/chat"/>
-                <LogoutRoute exact path="/logout"/>
-                <Route path="*">
-                    <Redirect to="/"/>
-                </Route>
-            </Switch> */}
-        </BrowserRouter>
-    </React.StrictMode>,
+    <div id="app">
+        <React.StrictMode>
+            <BrowserRouter>
+                <Chat />
+                {/* <Switch>
+                    <AuthorizeRoute exact path="/auth"/>
+                    <ChatRoute exact path="/chat"/>
+                    <LogoutRoute exact path="/logout"/>
+                    <Route path="*">
+                        <Redirect to="/"/>
+                    </Route>
+                </Switch> */}
+            </BrowserRouter>
+        </React.StrictMode>
+    </div>,
     document.getElementById("root")
 );
