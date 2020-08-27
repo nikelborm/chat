@@ -1,29 +1,19 @@
-html, body, div, span, p, i, a, li, ul, button, img, input, form {
+html, body {
 	margin: 0;
 	padding: 0;
 	border: 0;
 	font-size: 100%;
 	font: inherit;
 	vertical-align: baseline;
-}
-/* HTML5 display-role reset for older browsers */
-article, aside, details, figcaption, figure,
-footer, header, hgroup, menu, nav, section {
-	display: block;
-}
-body {
 	line-height: 1;
-}
-ol, ul {
-	list-style: none;
 }
 html {
 	display: grid;
-    place-items: center center;
-    width: 100%;
+	place-items: center center;
+	width: 100%;
 	height: 100%;
 }
-body{
+body {
 	/* full */
 	/* background: url(.png) 50% 50% no-repeat fixed #a9b89e;
 	background-size: cover; */
@@ -33,9 +23,19 @@ body{
 	font-size: 12px;
 	color: #333f4d;
 }
-b{
-	font-weight: bold;
+div, span, p, i, a, li, ul, button, img, input, form {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 100%;
+	font: inherit;
+	vertical-align: baseline;
 }
+
+ol, ul {
+	list-style: none;
+}
+
 .window-wrapper{
 	background: #fff;
 	width: 780px;
